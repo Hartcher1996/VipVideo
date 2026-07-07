@@ -35,7 +35,7 @@ async function loadVideoList(page = 1, keyword = '') {
   videoList.innerHTML = '<div class="loading">加载中...</div>';
 
   try {
-    const params = { pg: page };
+    const params = { ac: 'videolist', pg: page };
     if (keyword) {
       params.wd = keyword;
     }
