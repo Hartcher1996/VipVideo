@@ -1,78 +1,82 @@
 const express = require('express');
-const { spawn } = require('child_process');
 const path = require('path');
+const videoService = require('./services/videoService');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.get('/api/*', (req, res) => {
-  const pathPart = req.params[0] || '';
-  const query = req.query;
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+    return;
+  }
+  next();
+});
 
-  const params = new URLSearchParams();
-  Object.keys(query).forEach(key => {
-    params.append(key, query[key]);
-  });
-  const queryString = params.toString();
+app.get('/api/sources', (req, res) => {
+  try {
+    const sources = videoService.getSourceList();
+    res.json({ code: 1, sources });
+  } catch (err) {
+    res.status(500).json({ code: 0, error: err.message });
+  }
+});
 
-  const targetUrl = 'https://api.zuidapi.com/api.php/provide/vod/' + pathPart + (queryString ? '?' + queryString : '');
+app.get('/api/videos', async (req, res) => {
+  try {
+    const { wd: keyword, pg: page, source } = req.query;
+    const result = await videoService.searchVideos(keyword || '', parseInt(page) || 1, source || null);
+    res.json({ code: 1, ...result });
+  } catch (err) {
+    console.error('API Error:', err);
+    res.status(500).json({ code: 0, error: err.message, list: [] });
+  }
+});
 
-  console.log('Request:', targetUrl);
+app.get('/api/videos/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { source } = req.query;
+    if (!source) {
+      return res.status(400).json({ code: 0, error: 'source parameter is required' });
+    }
+    const video = await videoService.getVideoDetail(id, source);
+    if (!video) {
+      return res.json({ code: 0, msg: '未找到视频信息', video: null });
+    }
+    res.json({ code: 1, video });
+  } catch (err) {
+    console.error('Detail Error:', err);
+    res.status(500).json({ code: 0, error: err.message, video: null });
+  }
+});
 
-  const args = [
-    '-s',
-    '-x', 'http://127.0.0.1:18080',
-    targetUrl,
-    '-H', 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-    '-H', 'Accept: application/json, text/plain, */*',
-    '-H', 'Referer: https://zuidapi.com/',
-  ];
+app.get('/api/*', async (req, res) => {
+  try {
+    const pathPart = req.params[0] || '';
+    const query = req.query;
+    const source = query.source || null;
+    delete query.source;
 
-  const curl = spawn('curl', args, { timeout: 30000 });
-
-  let stdout = '';
-  let stderr = '';
-
-  curl.stdout.on('data', (data) => {
-    stdout += data.toString();
-  });
-
-  curl.stderr.on('data', (data) => {
-    stderr += data.toString();
-  });
-
-  curl.on('close', (code) => {
-    if (code !== 0) {
-      console.error('Curl error code:', code);
-      console.error('Stderr:', stderr);
-      if (!res.headersSent) {
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        res.status(500).json({ error: 'Curl failed: ' + stderr });
-      }
-      return;
+    if (pathPart === '' || pathPart === '/') {
+      const result = await videoService.searchVideos(query.wd || '', parseInt(query.pg) || 1, source);
+      return res.json({ code: 1, ...result });
     }
 
-    console.log('Response length:', stdout.length);
-
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    res.status(200);
-    res.send(stdout);
-  });
-
-  curl.on('error', (err) => {
-    console.error('Spawn error:', err.message);
-    if (!res.headersSent) {
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      res.status(500).json({ error: err.message });
-    }
-  });
+    res.status(404).json({ code: 0, error: 'Not found' });
+  } catch (err) {
+    console.error('API Error:', err);
+    res.status(500).json({ code: 0, error: err.message });
+  }
 });
 
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
+  const sources = videoService.getSourceList();
+  console.log(`Enabled sources (${sources.length}):`, sources.map(s => s.name).join(', '));
 });

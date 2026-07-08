@@ -92,6 +92,70 @@ body {
   box-shadow: 0 4px 15px rgba(233, 69, 96, 0.4);
 }
 
+.source-bar {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 10px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.source-bar .container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.source-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.source-label {
+  font-size: 13px;
+  color: #888;
+  margin-right: 4px;
+}
+
+.source-tab {
+  padding: 6px 14px;
+  border-radius: 16px;
+  font-size: 13px;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.05);
+  color: #aaa;
+  border: 1px solid transparent;
+  transition: all 0.3s;
+  white-space: nowrap;
+}
+
+.source-tab:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.source-tab.active {
+  background: linear-gradient(135deg, #e94560, #ff6b6b);
+  color: #fff;
+  border-color: #e94560;
+}
+
+.source-tab .source-count {
+  margin-left: 4px;
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+.source-status {
+  font-size: 12px;
+  color: #666;
+  white-space: nowrap;
+}
+
+.source-status .success { color: #4ade80; }
+.source-status .error { color: #f87171; }
+
 .main {
   padding: 30px 0;
   min-height: calc(100vh - 140px);
@@ -168,6 +232,22 @@ body {
   border-radius: 4px;
   font-size: 11px;
   color: #fff;
+}
+
+.video-card .source-tag {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  color: #fff;
+  backdrop-filter: blur(4px);
+}
+
+.video-card {
+  position: relative;
 }
 
 .pagination {
@@ -293,6 +373,35 @@ body {
   margin-bottom: 16px;
   padding-bottom: 10px;
   border-bottom: 1px solid #2a2a4a;
+}
+
+.detail-source-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.detail-source-tab {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  background: #2a2a4a;
+  color: #aaa;
+  transition: all 0.3s;
+  border: 1px solid transparent;
+}
+
+.detail-source-tab:hover {
+  background: #3a3a5a;
+  color: #fff;
+}
+
+.detail-source-tab.active {
+  background: linear-gradient(135deg, #e94560, #ff6b6b);
+  color: #fff;
+  border-color: #e94560;
 }
 
 .play-list {
