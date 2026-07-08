@@ -26,7 +26,11 @@ function showPage(pageName) {
 
 async function fetchJSON(url) {
   const response = await fetch(url);
-  if (!response.ok) throw new Error('请求失败');
+  if (!response.ok) {
+    const text = await response.text();
+    console.error('请求失败:', url, '状态:', response.status, '响应:', text.substring(0, 200));
+    throw new Error('请求失败: ' + response.status);
+  }
   return response.json();
 }
 
