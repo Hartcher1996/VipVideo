@@ -1,4 +1,4 @@
-const API_BASE = '/api/';
+const API_BASE = '/api';
 let currentPage = 1;
 let currentKeyword = '';
 let totalPage = 1;
@@ -21,13 +21,16 @@ function showPage(pageName) {
   window.scrollTo(0, 0);
 }
 
-async function fetchAPI(params) {
+async function fetchAPI(endpoint, params) {
   const query = new URLSearchParams(params).toString();
-  const response = await fetch(API_BASE + '?' + query);
-  if (!response.ok) throw new Error('请求失败');
-  const text = await response.text();
-  const jsonStr = text.substring(0, text.lastIndexOf('}') + 1);
-  return JSON.parse(jsonStr);
+  const url = API_BASE + '/' + endpoint + (query ? '?' + query : '');
+  const response = await fetch(url);
+  if (!response.ok) {
+    const text = await response.text();
+    console.error('请求失败:', url, '状态:', response.status, '响应:', text.substring(0, 200));
+    throw new Error('请求失败: ' + response.status);
+  }
+  return response.json();
 }
 
 async function loadVideoList(page = 1, keyword = '') {
@@ -40,7 +43,7 @@ async function loadVideoList(page = 1, keyword = '') {
       params.wd = keyword;
     }
 
-    const data = await fetchAPI(params);
+    const data = await fetchAPI('list', params);
 
     if (data.code === 1 && data.list && data.list.length > 0) {
       totalPage = data.pagecount || 1;
@@ -92,7 +95,7 @@ async function loadVideoDetail(id) {
   detailContent.innerHTML = '<div class="loading">加载中...</div>';
 
   try {
-    const data = await fetchAPI({ ac: 'videolist', ids: id });
+    const data = await fetchAPI('detail', { ids: id });
 
     if (data.code === 1 && data.list && data.list.length > 0) {
       currentVideo = data.list[0];

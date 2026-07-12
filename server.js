@@ -1,78 +1,87 @@
 const express = require('express');
-const { spawn } = require('child_process');
 const path = require('path');
+const videoService = require('./services/videoService');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.get('/api/*', (req, res) => {
-  const pathPart = req.params[0] || '';
-  const query = req.query;
+// CORS
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') return res.sendStatus(200);
+  next();
+});
 
-  const params = new URLSearchParams();
-  Object.keys(query).forEach(key => {
-    params.append(key, query[key]);
-  });
-  const queryString = params.toString();
+// 视频列表接口
+app.get('/api/list', async (req, res) => {
+  const page = parseInt(req.query.pg) || 1;
+  const keyword = req.query.wd || '';
 
-  const targetUrl = 'https://api.zuidapi.com/api.php/provide/vod/' + pathPart + (queryString ? '?' + queryString : '');
+  try {
+    const data = keyword
+      ? await videoService.searchVideos(keyword, page)
+      : await videoService.getVideoList(page);
+    res.json(data);
+  } catch (err) {
+    console.error('API /list error:', err.message);
+    res.status(500).json({ code: 0, msg: '服务器错误: ' + err.message, list: [] });
+  }
+});
 
-  console.log('Request:', targetUrl);
+// 搜索接口
+app.get('/api/search', async (req, res) => {
+  const keyword = req.query.wd || '';
+  const page = parseInt(req.query.pg) || 1;
 
-  const args = [
-    '-s',
-    '-x', 'http://127.0.0.1:18080',
-    targetUrl,
-    '-H', 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-    '-H', 'Accept: application/json, text/plain, */*',
-    '-H', 'Referer: https://zuidapi.com/',
-  ];
+  if (!keyword) {
+    return res.json({ code: 0, msg: '请输入搜索关键词', list: [] });
+  }
 
-  const curl = spawn('curl', args, { timeout: 30000 });
+  try {
+    const data = await videoService.searchVideos(keyword, page);
+    res.json(data);
+  } catch (err) {
+    console.error('API /search error:', err.message);
+    res.status(500).json({ code: 0, msg: '服务器错误: ' + err.message, list: [] });
+  }
+});
 
-  let stdout = '';
-  let stderr = '';
+// 详情接口
+app.get('/api/detail', async (req, res) => {
+  const id = req.query.ids;
 
-  curl.stdout.on('data', (data) => {
-    stdout += data.toString();
-  });
+  if (!id) {
+    return res.json({ code: 0, msg: '缺少视频ID', list: [] });
+  }
 
-  curl.stderr.on('data', (data) => {
-    stderr += data.toString();
-  });
+  try {
+    const data = await videoService.getVideoDetail(id);
+    res.json(data);
+  } catch (err) {
+    console.error('API /detail error:', err.message);
+    res.status(500).json({ code: 0, msg: '服务器错误: ' + err.message, list: [] });
+  }
+});
 
-  curl.on('close', (code) => {
-    if (code !== 0) {
-      console.error('Curl error code:', code);
-      console.error('Stderr:', stderr);
-      if (!res.headersSent) {
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        res.status(500).json({ error: 'Curl failed: ' + stderr });
-      }
-      return;
-    }
-
-    console.log('Response length:', stdout.length);
-
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    res.status(200);
-    res.send(stdout);
-  });
-
-  curl.on('error', (err) => {
-    console.error('Spawn error:', err.message);
-    if (!res.headersSent) {
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      res.status(500).json({ error: err.message });
-    }
+// 数据源状态接口
+app.get('/api/sources', (req, res) => {
+  res.json({
+    code: 1,
+    sources: videoService.sources.map(s => ({
+      id: s.id,
+      name: s.name,
+      enabled: s.enabled,
+      priority: s.priority
+    }))
   });
 });
 
 app.listen(PORT, () => {
+  const enabledSources = videoService.sources.filter(s => s.enabled);
   console.log(`Server running at http://localhost:${PORT}`);
+  console.log(`Enabled sources (${enabledSources.length}): ${enabledSources.map(s => s.name).join(', ')}`);
 });
