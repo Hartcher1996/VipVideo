@@ -400,6 +400,11 @@
 
     dp = new DPlayer(dpOptions);
 
+    // 播放器错误处理
+    dp.on('error', () => {
+      showToast('视频加载失败，请尝试切换播放源');
+    });
+
     // 播放进度记忆
     const progressKey = `progress:${videoId}:${currentSourceIndex}:${episodeIndex}`;
     dp.on('timeupdate', () => {
@@ -474,8 +479,6 @@
   function initEvents() {
     $('logoBtn').addEventListener('click', goHome);
 
-    // 搜索防抖
-    let searchTimer = null;
     $('searchBtn').addEventListener('click', () => {
       const keyword = $('searchInput').value.trim();
       currentKeyword = keyword;
@@ -487,13 +490,6 @@
         { text: keyword ? `搜索「${keyword}」` : '热门推荐' }
       ]);
       loadVideoList(1, keyword);
-    });
-
-    $('searchInput').addEventListener('input', () => {
-      clearTimeout(searchTimer);
-      searchTimer = setTimeout(() => {
-        if (!$('searchInput').value.trim()) return;
-      }, 300);
     });
 
     $('searchInput').addEventListener('keypress', (e) => {
@@ -582,15 +578,19 @@
       }
     });
 
-    // 键盘快捷键
+    // 键盘快捷键（排除输入框和播放器内部）
     document.addEventListener('keydown', (e) => {
       if (!$('playerPage').classList.contains('active')) return;
       if (e.target.tagName === 'INPUT') return;
+      // 不拦截播放器内的键盘事件
+      if (e.target.closest('.dplayer')) return;
       if (e.key === 'ArrowLeft' && currentEpisodeIndex > 0) {
+        e.preventDefault();
         playEpisode(currentEpisodeIndex - 1);
       } else if (e.key === 'ArrowRight') {
         const source = playSources[currentSourceIndex];
         if (source && currentEpisodeIndex < source.episodes.length - 1) {
+          e.preventDefault();
           playEpisode(currentEpisodeIndex + 1);
         }
       }
