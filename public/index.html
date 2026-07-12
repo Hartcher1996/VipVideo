@@ -11,7 +11,7 @@
   <div id="app">
     <header class="header">
       <div class="container">
-        <div class="logo">
+        <div class="logo" id="logoBtn">
           <span class="logo-icon">🎬</span>
           <span class="logo-text">VIP视频解析</span>
         </div>
@@ -23,9 +23,13 @@
     </header>
 
     <main class="main container">
+      <nav class="breadcrumb" id="breadcrumb">
+        <span class="breadcrumb-item" data-page="home">首页</span>
+      </nav>
+
       <div id="homePage" class="page active">
         <div class="section">
-          <h2 class="section-title">热门推荐</h2>
+          <h2 class="section-title" id="listTitle">热门推荐</h2>
           <div id="videoList" class="video-grid">
             <div class="loading">加载中...</div>
           </div>
@@ -38,18 +42,35 @@
       </div>
 
       <div id="detailPage" class="page">
-        <button id="backBtn" class="back-btn">← 返回列表</button>
+        <div class="detail-toolbar">
+          <button id="backBtn" class="back-btn">← 返回列表</button>
+        </div>
         <div id="detailContent" class="detail-content">
           <div class="loading">加载中...</div>
         </div>
       </div>
 
       <div id="playerPage" class="page">
-        <button id="playerBackBtn" class="back-btn">← 返回详情</button>
-        <div class="player-wrapper">
-          <div id="dplayer"></div>
+        <div class="player-toolbar">
+          <button id="playerBackBtn" class="back-btn">← 返回详情</button>
         </div>
-        <h2 id="playerTitle" class="player-title"></h2>
+        <div class="player-layout">
+          <div class="player-main">
+            <div class="player-wrapper">
+              <div id="dplayer"></div>
+            </div>
+            <h2 id="playerTitle" class="player-title"></h2>
+          </div>
+          <div class="player-sidebar">
+            <div class="sidebar-section">
+              <div class="sidebar-tabs" id="playerSourceTabs"></div>
+            </div>
+            <div class="sidebar-section">
+              <h3 class="sidebar-title">剧集列表</h3>
+              <div class="episode-list" id="playerEpisodeList"></div>
+            </div>
+          </div>
+        </div>
       </div>
     </main>
 

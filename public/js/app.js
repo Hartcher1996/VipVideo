@@ -3,7 +3,9 @@ let currentPage = 1;
 let currentKeyword = '';
 let totalPage = 1;
 let currentVideo = null;
-let currentEpisode = null;
+let playSources = [];
+let currentSourceIndex = 0;
+let currentEpisodeIndex = 0;
 let dp = null;
 
 const $ = (id) => document.getElementById(id);
@@ -19,6 +21,36 @@ function showPage(pageName) {
     pages[key].classList.toggle('active', key === pageName);
   });
   window.scrollTo(0, 0);
+}
+
+function updateBreadcrumb(items) {
+  const breadcrumb = $('breadcrumb');
+  breadcrumb.innerHTML = items.map((item, index) => {
+    const isLast = index === items.length - 1;
+    if (item.page && !isLast) {
+      return `<span class="breadcrumb-item" data-page="${item.page}">${item.text}</span><span class="breadcrumb-sep">›</span>`;
+    }
+    return `<span class="breadcrumb-item${isLast ? ' active' : ''}">${item.text}</span>`;
+  }).join('');
+
+  breadcrumb.querySelectorAll('.breadcrumb-item[data-page]').forEach(item => {
+    item.addEventListener('click', () => {
+      const page = item.dataset.page;
+      if (page === 'home') {
+        goHome();
+      }
+    });
+  });
+}
+
+function goHome() {
+  currentKeyword = '';
+  currentPage = 1;
+  $('searchInput').value = '';
+  $('listTitle').textContent = '热门推荐';
+  showPage('home');
+  updateBreadcrumb([{ text: '首页', page: 'home' }]);
+  loadVideoList(1);
 }
 
 async function fetchAPI(endpoint, params) {
@@ -99,7 +131,14 @@ async function loadVideoDetail(id) {
 
     if (data.code === 1 && data.list && data.list.length > 0) {
       currentVideo = data.list[0];
+      playSources = parsePlaySources(currentVideo);
+      currentSourceIndex = 0;
+      currentEpisodeIndex = 0;
       renderVideoDetail(currentVideo);
+      updateBreadcrumb([
+        { text: '首页', page: 'home' },
+        { text: currentVideo.vod_name }
+      ]);
     } else {
       detailContent.innerHTML = '<div class="loading">未找到视频信息</div>';
     }
@@ -109,20 +148,18 @@ async function loadVideoDetail(id) {
   }
 }
 
-function renderVideoDetail(video) {
-  const detailContent = $('detailContent');
-
+function parsePlaySources(video) {
   const playFrom = video.vod_play_from || '';
   const playUrl = video.vod_play_url || '';
 
-  const playSources = [];
+  const sources = [];
   if (playFrom && playUrl) {
-    const sources = playFrom.split('$$$');
-    const urls = playUrl.split('$$$');
+    const fromArr = playFrom.split('$$$');
+    const urlArr = playUrl.split('$$$');
 
-    sources.forEach((source, index) => {
-      if (urls[index]) {
-        const episodes = urls[index].split('#').map(item => {
+    fromArr.forEach((source, index) => {
+      if (urlArr[index]) {
+        const episodes = urlArr[index].split('#').map(item => {
           const parts = item.split('$');
           return {
             name: parts[0] || '',
@@ -131,7 +168,7 @@ function renderVideoDetail(video) {
         }).filter(ep => ep.name && ep.url);
 
         if (episodes.length > 0) {
-          playSources.push({
+          sources.push({
             name: source || '播放源' + (index + 1),
             episodes: episodes
           });
@@ -139,6 +176,11 @@ function renderVideoDetail(video) {
       }
     });
   }
+  return sources;
+}
+
+function renderVideoDetail(video) {
+  const detailContent = $('detailContent');
 
   detailContent.innerHTML = `
     <div class="detail-header">
@@ -158,53 +200,153 @@ function renderVideoDetail(video) {
         <p class="desc">${video.vod_content || video.vod_blurb || '暂无简介'}</p>
       </div>
     </div>
-    ${playSources.length > 0 ? playSources.map((source, sIndex) => `
+    ${playSources.length > 0 ? `
       <div class="detail-section">
-        <h3>${source.name}</h3>
-        <div class="play-list">
-          ${source.episodes.map((ep, eIndex) => `
-            <div class="play-item" data-source="${sIndex}" data-episode="${eIndex}">${ep.name}</div>
+        <div class="source-tabs" id="sourceTabs">
+          ${playSources.map((s, i) => `
+            <div class="source-tab ${i === 0 ? 'active' : ''}" data-index="${i}">${s.name}</div>
           `).join('')}
         </div>
+        <div class="play-list" id="detailPlayList"></div>
       </div>
-    `).join('') : '<div class="loading">暂无播放资源</div>'}
+    ` : '<div class="loading">暂无播放资源</div>'}
   `;
 
-  detailContent.querySelectorAll('.play-item').forEach(item => {
+  if (playSources.length > 0) {
+    renderDetailEpisodeList(0);
+
+    detailContent.querySelectorAll('.source-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const index = parseInt(tab.dataset.index);
+        currentSourceIndex = index;
+        currentEpisodeIndex = 0;
+        detailContent.querySelectorAll('.source-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        renderDetailEpisodeList(index);
+      });
+    });
+  }
+}
+
+function renderDetailEpisodeList(sourceIndex) {
+  const playlist = $('detailPlayList');
+  if (!playlist) return;
+
+  const source = playSources[sourceIndex];
+  if (!source) return;
+
+  playlist.innerHTML = source.episodes.map((ep, eIndex) => `
+    <div class="play-item" data-episode="${eIndex}">${ep.name}</div>
+  `).join('');
+
+  playlist.querySelectorAll('.play-item').forEach(item => {
     item.addEventListener('click', () => {
-      const sIndex = parseInt(item.dataset.source);
       const eIndex = parseInt(item.dataset.episode);
-      const episode = playSources[sIndex].episodes[eIndex];
-      playVideo(video.vod_name, episode.name, episode.url);
+      playEpisode(eIndex);
     });
   });
 }
 
-function playVideo(videoName, episodeName, url) {
+function playEpisode(episodeIndex) {
+  const source = playSources[currentSourceIndex];
+  if (!source) return;
+
+  const episode = source.episodes[episodeIndex];
+  if (!episode) return;
+
+  currentEpisodeIndex = episodeIndex;
+  const videoName = currentVideo ? currentVideo.vod_name : '';
+
   showPage('player');
-  $('playerTitle').textContent = videoName + ' - ' + episodeName;
-  currentEpisode = { videoName, episodeName, url };
+  $('playerTitle').textContent = videoName + ' - ' + episode.name;
 
   if (dp) {
     dp.destroy();
+    dp = null;
   }
 
   dp = new DPlayer({
     container: $('dplayer'),
     video: {
-      url: url,
+      url: episode.url,
       type: 'auto'
     },
     autoplay: true,
     lang: 'zh-cn'
   });
+
+  renderPlayerSourceTabs();
+  renderPlayerEpisodeList();
+  updateBreadcrumb([
+    { text: '首页', page: 'home' },
+    { text: videoName, page: 'detail' },
+    { text: episode.name }
+  ]);
+}
+
+function renderPlayerSourceTabs() {
+  const container = $('playerSourceTabs');
+  if (!container) return;
+
+  container.innerHTML = playSources.map((s, i) => `
+    <div class="sidebar-tab ${i === currentSourceIndex ? 'active' : ''}" data-index="${i}">${s.name}</div>
+  `).join('');
+
+  container.querySelectorAll('.sidebar-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const index = parseInt(tab.dataset.index);
+      if (index === currentSourceIndex) return;
+      currentSourceIndex = index;
+      currentEpisodeIndex = 0;
+      renderPlayerSourceTabs();
+      renderPlayerEpisodeList();
+      playEpisode(0);
+    });
+  });
+}
+
+function renderPlayerEpisodeList() {
+  const container = $('playerEpisodeList');
+  if (!container) return;
+
+  const source = playSources[currentSourceIndex];
+  if (!source) return;
+
+  container.innerHTML = source.episodes.map((ep, i) => `
+    <div class="episode-item ${i === currentEpisodeIndex ? 'active' : ''}" data-index="${i}">
+      <span class="ep-num">${i + 1}</span>
+      <span class="ep-name">${ep.name}</span>
+      ${i === currentEpisodeIndex ? '<span class="ep-playing">▶ 播放中</span>' : ''}
+    </div>
+  `).join('');
+
+  container.querySelectorAll('.episode-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const index = parseInt(item.dataset.index);
+      if (index === currentEpisodeIndex) return;
+      playEpisode(index);
+    });
+  });
+
+  const activeItem = container.querySelector('.episode-item.active');
+  if (activeItem) {
+    activeItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
 }
 
 function initEvents() {
+  $('logoBtn').addEventListener('click', goHome);
+
   $('searchBtn').addEventListener('click', () => {
     const keyword = $('searchInput').value.trim();
     currentKeyword = keyword;
     currentPage = 1;
+    $('listTitle').textContent = keyword ? `搜索: ${keyword}` : '热门推荐';
+    showPage('home');
+    updateBreadcrumb([
+      { text: '首页', page: 'home' },
+      { text: keyword ? `搜索「${keyword}」` : '热门推荐' }
+    ]);
     loadVideoList(1, keyword);
   });
 
@@ -230,6 +372,7 @@ function initEvents() {
 
   $('backBtn').addEventListener('click', () => {
     showPage('home');
+    updateBreadcrumb([{ text: '首页', page: 'home' }]);
   });
 
   $('playerBackBtn').addEventListener('click', () => {
@@ -237,11 +380,18 @@ function initEvents() {
       dp.pause();
     }
     showPage('detail');
+    if (currentVideo) {
+      updateBreadcrumb([
+        { text: '首页', page: 'home' },
+        { text: currentVideo.vod_name }
+      ]);
+    }
   });
 }
 
 function init() {
   initEvents();
+  updateBreadcrumb([{ text: '首页', page: 'home' }]);
   loadVideoList(1);
 }
 

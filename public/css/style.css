@@ -44,6 +44,12 @@ body {
   -webkit-text-fill-color: transparent;
   background-clip: text;
   white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+
+.logo:hover {
+  opacity: 0.9;
 }
 
 .logo-icon {
@@ -93,8 +99,36 @@ body {
 }
 
 .main {
-  padding: 30px 0;
+  padding: 20px 0 30px;
   min-height: calc(100vh - 140px);
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  color: #888;
+}
+
+.breadcrumb-item {
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.breadcrumb-item:hover {
+  color: #e94560;
+}
+
+.breadcrumb-item.active {
+  color: #fff;
+  cursor: default;
+}
+
+.breadcrumb-sep {
+  color: #444;
 }
 
 .page {
@@ -211,21 +245,9 @@ body {
   font-size: 16px;
 }
 
-.back-btn {
-  background: transparent;
-  border: 2px solid #2a2a4a;
-  color: #fff;
-  padding: 8px 16px;
-  border-radius: 20px;
-  cursor: pointer;
-  font-size: 14px;
+.detail-toolbar,
+.player-toolbar {
   margin-bottom: 20px;
-  transition: all 0.3s;
-}
-
-.back-btn:hover {
-  border-color: #e94560;
-  color: #e94560;
 }
 
 .detail-content {
@@ -295,6 +317,33 @@ body {
   border-bottom: 1px solid #2a2a4a;
 }
 
+.source-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.source-tab {
+  padding: 8px 20px;
+  background: #2a2a4a;
+  border-radius: 20px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.3s;
+  border: 2px solid transparent;
+}
+
+.source-tab:hover {
+  background: #3a3a5a;
+}
+
+.source-tab.active {
+  background: linear-gradient(135deg, #e94560, #ff6b6b);
+  color: #fff;
+  border-color: #e94560;
+}
+
 .play-list {
   display: flex;
   flex-wrap: wrap;
@@ -315,6 +364,16 @@ body {
   transform: translateY(-2px);
 }
 
+.player-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 20px;
+}
+
+.player-main {
+  min-width: 0;
+}
+
 .player-wrapper {
   background: #000;
   border-radius: 12px;
@@ -330,6 +389,128 @@ body {
 .player-title {
   font-size: 20px;
   padding: 0 10px;
+}
+
+.player-sidebar {
+  background: #1a1a2e;
+  border-radius: 12px;
+  padding: 16px;
+  max-height: calc(100vh - 180px);
+  overflow-y: auto;
+  position: sticky;
+  top: 100px;
+}
+
+.player-sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.player-sidebar::-webkit-scrollbar-track {
+  background: #1a1a2e;
+}
+
+.player-sidebar::-webkit-scrollbar-thumb {
+  background: #3a3a5a;
+  border-radius: 3px;
+}
+
+.sidebar-section {
+  margin-bottom: 20px;
+}
+
+.sidebar-section:last-child {
+  margin-bottom: 0;
+}
+
+.sidebar-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sidebar-tab {
+  padding: 6px 14px;
+  background: #2a2a4a;
+  border-radius: 16px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.sidebar-tab:hover {
+  background: #3a3a5a;
+}
+
+.sidebar-tab.active {
+  background: linear-gradient(135deg, #e94560, #ff6b6b);
+  color: #fff;
+  border-color: #e94560;
+}
+
+.sidebar-title {
+  font-size: 15px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #2a2a4a;
+}
+
+.episode-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.episode-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #2a2a4a;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.episode-item:hover {
+  background: #3a3a5a;
+  transform: translateX(3px);
+}
+
+.episode-item.active {
+  background: linear-gradient(135deg, #e94560, #ff6b6b);
+  color: #fff;
+}
+
+.ep-num {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.episode-item.active .ep-num {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.ep-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ep-playing {
+  font-size: 11px;
+  opacity: 0.9;
+  flex-shrink: 0;
 }
 
 .footer {
@@ -368,5 +549,14 @@ body {
   .detail-info h1 {
     font-size: 22px;
     text-align: center;
+  }
+
+  .player-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .player-sidebar {
+    max-height: 400px;
+    position: static;
   }
 }
