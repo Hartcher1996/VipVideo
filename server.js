@@ -7,76 +7,81 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.static(path.join(__dirname, 'public')));
 
+// CORS
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  if (req.method === 'OPTIONS') {
-    res.sendStatus(200);
-    return;
-  }
+  if (req.method === 'OPTIONS') return res.sendStatus(200);
   next();
 });
 
+// 视频列表接口
+app.get('/api/list', async (req, res) => {
+  const page = parseInt(req.query.pg) || 1;
+  const keyword = req.query.wd || '';
+
+  try {
+    const data = keyword
+      ? await videoService.searchVideos(keyword, page)
+      : await videoService.getVideoList(page);
+    res.json(data);
+  } catch (err) {
+    console.error('API /list error:', err.message);
+    res.status(500).json({ code: 0, msg: '服务器错误: ' + err.message, list: [] });
+  }
+});
+
+// 搜索接口
+app.get('/api/search', async (req, res) => {
+  const keyword = req.query.wd || '';
+  const page = parseInt(req.query.pg) || 1;
+
+  if (!keyword) {
+    return res.json({ code: 0, msg: '请输入搜索关键词', list: [] });
+  }
+
+  try {
+    const data = await videoService.searchVideos(keyword, page);
+    res.json(data);
+  } catch (err) {
+    console.error('API /search error:', err.message);
+    res.status(500).json({ code: 0, msg: '服务器错误: ' + err.message, list: [] });
+  }
+});
+
+// 详情接口
+app.get('/api/detail', async (req, res) => {
+  const id = req.query.ids;
+
+  if (!id) {
+    return res.json({ code: 0, msg: '缺少视频ID', list: [] });
+  }
+
+  try {
+    const data = await videoService.getVideoDetail(id);
+    res.json(data);
+  } catch (err) {
+    console.error('API /detail error:', err.message);
+    res.status(500).json({ code: 0, msg: '服务器错误: ' + err.message, list: [] });
+  }
+});
+
+// 数据源状态接口
 app.get('/api/sources', (req, res) => {
-  try {
-    const sources = videoService.getSourceList();
-    res.json({ code: 1, sources });
-  } catch (err) {
-    res.status(500).json({ code: 0, error: err.message });
-  }
-});
-
-app.get('/api/videos', async (req, res) => {
-  try {
-    const { wd: keyword, pg: page, source } = req.query;
-    const result = await videoService.searchVideos(keyword || '', parseInt(page) || 1, source || null);
-    res.json({ code: 1, ...result });
-  } catch (err) {
-    console.error('API Error:', err);
-    res.status(500).json({ code: 0, error: err.message, list: [] });
-  }
-});
-
-app.get('/api/videos/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { source } = req.query;
-    if (!source) {
-      return res.status(400).json({ code: 0, error: 'source parameter is required' });
-    }
-    const video = await videoService.getVideoDetail(id, source);
-    if (!video) {
-      return res.json({ code: 0, msg: '未找到视频信息', video: null });
-    }
-    res.json({ code: 1, video });
-  } catch (err) {
-    console.error('Detail Error:', err);
-    res.status(500).json({ code: 0, error: err.message, video: null });
-  }
-});
-
-app.get('/api/*', async (req, res) => {
-  try {
-    const pathPart = req.params[0] || '';
-    const query = req.query;
-    const source = query.source || null;
-    delete query.source;
-
-    if (pathPart === '' || pathPart === '/') {
-      const result = await videoService.searchVideos(query.wd || '', parseInt(query.pg) || 1, source);
-      return res.json({ code: 1, ...result });
-    }
-
-    res.status(404).json({ code: 0, error: 'Not found' });
-  } catch (err) {
-    console.error('API Error:', err);
-    res.status(500).json({ code: 0, error: err.message });
-  }
+  res.json({
+    code: 1,
+    sources: videoService.sources.map(s => ({
+      id: s.id,
+      name: s.name,
+      enabled: s.enabled,
+      priority: s.priority
+    }))
+  });
 });
 
 app.listen(PORT, () => {
+  const enabledSources = videoService.sources.filter(s => s.enabled);
   console.log(`Server running at http://localhost:${PORT}`);
-  const sources = videoService.getSourceList();
-  console.log(`Enabled sources (${sources.length}):`, sources.map(s => s.name).join(', '));
+  console.log(`Enabled sources (${enabledSources.length}): ${enabledSources.map(s => s.name).join(', ')}`);
 });

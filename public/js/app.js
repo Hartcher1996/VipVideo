@@ -1,13 +1,10 @@
-const API_BASE = '/api/';
+const API_BASE = '/api';
 let currentPage = 1;
 let currentKeyword = '';
 let totalPage = 1;
-let currentSource = 'all';
-let sourceList = [];
 let currentVideo = null;
 let currentEpisode = null;
 let dp = null;
-let currentDetailSource = null;
 
 const $ = (id) => document.getElementById(id);
 
@@ -24,7 +21,9 @@ function showPage(pageName) {
   window.scrollTo(0, 0);
 }
 
-async function fetchJSON(url) {
+async function fetchAPI(endpoint, params) {
+  const query = new URLSearchParams(params).toString();
+  const url = API_BASE + '/' + endpoint + (query ? '?' + query : '');
   const response = await fetch(url);
   if (!response.ok) {
     const text = await response.text();
@@ -34,111 +33,26 @@ async function fetchJSON(url) {
   return response.json();
 }
 
-async function loadSources() {
-  try {
-    const data = await fetchJSON(API_BASE + 'sources');
-    if (data.code === 1 && data.sources) {
-      sourceList = data.sources;
-      renderSourceTabs();
-    }
-  } catch (error) {
-    console.error('加载数据源失败:', error);
-  }
-}
-
-function renderSourceTabs() {
-  const container = $('sourceTabs');
-  const allTab = document.createElement('span');
-  allTab.className = 'source-tab' + (currentSource === 'all' ? ' active' : '');
-  allTab.textContent = '全部聚合';
-  allTab.dataset.source = 'all';
-  allTab.addEventListener('click', () => {
-    currentSource = 'all';
-    currentPage = 1;
-    updateActiveSourceTab();
-    loadVideoList(1, currentKeyword);
-  });
-  container.appendChild(allTab);
-
-  sourceList.forEach(source => {
-    const tab = document.createElement('span');
-    tab.className = 'source-tab' + (currentSource === source.id ? ' active' : '');
-    tab.innerHTML = source.name + '<span class="source-count" id="count-' + source.id + '"></span>';
-    tab.dataset.source = source.id;
-    tab.addEventListener('click', () => {
-      currentSource = source.id;
-      currentPage = 1;
-      updateActiveSourceTab();
-      loadVideoList(1, currentKeyword);
-    });
-    container.appendChild(tab);
-  });
-}
-
-function updateActiveSourceTab() {
-  document.querySelectorAll('.source-tab').forEach(tab => {
-    tab.classList.toggle('active', tab.dataset.source === currentSource);
-  });
-}
-
-function updateSourceStatus(sources) {
-  const statusEl = $('sourceStatus');
-  if (!sources || sources.length === 0) {
-    statusEl.innerHTML = '';
-    return;
-  }
-
-  const success = sources.filter(s => s.success).length;
-  const total = sources.length;
-
-  if (currentSource === 'all') {
-    statusEl.innerHTML = `<span class="success">${success}/${total}</span> 源可用`;
-  } else {
-    const src = sources.find(s => s.id === currentSource);
-    if (src) {
-      statusEl.innerHTML = src.success
-        ? `<span class="success">●</span> 正常`
-        : `<span class="error">●</span> ${src.error || '异常'}`;
-    }
-  }
-
-  sources.forEach(s => {
-    const countEl = $('count-' + s.id);
-    if (countEl) {
-      countEl.textContent = s.success ? s.count : '×';
-      countEl.style.color = s.success ? '' : '#f87171';
-    }
-  });
-}
-
 async function loadVideoList(page = 1, keyword = '') {
   const videoList = $('videoList');
-  const sectionTitle = $('sectionTitle');
   videoList.innerHTML = '<div class="loading">加载中...</div>';
 
-  if (keyword) {
-    sectionTitle.textContent = '搜索：' + keyword;
-  } else {
-    sectionTitle.textContent = '热门推荐';
-  }
-
   try {
-    let url = API_BASE + 'videos?pg=' + page;
-    if (keyword) url += '&wd=' + encodeURIComponent(keyword);
-    if (currentSource !== 'all') url += '&source=' + currentSource;
+    const params = { pg: page };
+    if (keyword) {
+      params.wd = keyword;
+    }
 
-    const data = await fetchJSON(url);
+    const data = await fetchAPI('list', params);
 
     if (data.code === 1 && data.list && data.list.length > 0) {
       totalPage = data.pagecount || 1;
       renderVideoList(data.list);
       updatePagination();
-      updateSourceStatus(data.sources);
     } else {
       videoList.innerHTML = '<div class="loading">没有找到相关视频</div>';
       totalPage = 1;
       updatePagination();
-      updateSourceStatus(data.sources);
     }
   } catch (error) {
     videoList.innerHTML = '<div class="loading">加载失败，请稍后重试</div>';
@@ -148,27 +62,23 @@ async function loadVideoList(page = 1, keyword = '') {
 
 function renderVideoList(videos) {
   const videoList = $('videoList');
-  videoList.innerHTML = videos.map(video => {
-    const sourceName = sourceList.find(s => s.id === video.sourceId)?.name || '';
-    return `
-    <div class="video-card" data-id="${video.id}" data-source="${video.sourceId}">
-      ${sourceName ? '<span class="source-tag">' + sourceName + '</span>' : ''}
-      <img class="cover" src="${video.pic || ''}" alt="${video.name}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 200 300%22%3E%3Crect fill=%22%232a2a4a%22 width=%22200%22 height=%22300%22/%3E%3Ctext fill=%22%23666%22 font-size=%2214%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3E暂无封面%3C/text%3E%3C/svg%3E'">
+  videoList.innerHTML = videos.map(video => `
+    <div class="video-card" data-id="${video.vod_id}">
+      <img class="cover" src="${video.vod_pic || 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 200 300%22%3E%3Crect fill=%22%232a2a4a%22 width=%22200%22 height=%22300%22/%3E%3Ctext fill=%22%23666%22 font-size=%2214%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3E暂无封面%3C/text%3E%3C/svg%3E'}" alt="${video.vod_name}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 200 300%22%3E%3Crect fill=%22%232a2a4a%22 width=%22200%22 height=%22300%22/%3E%3Ctext fill=%22%23666%22 font-size=%2214%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3E暂无封面%3C/text%3E%3C/svg%3E'">
       <div class="info">
-        <div class="title">${video.name}</div>
+        <div class="title">${video.vod_name}</div>
         <div class="meta">
-          <span class="type">${video.typeName || ''}</span>
-          <span>${video.remarks || ''}</span>
+          <span class="type">${video.type_name || ''}</span>
+          <span>${video.vod_remarks || ''}</span>
         </div>
       </div>
     </div>
-  `}).join('');
+  `).join('');
 
   videoList.querySelectorAll('.video-card').forEach(card => {
     card.addEventListener('click', () => {
       const id = card.dataset.id;
-      const source = card.dataset.source;
-      loadVideoDetail(id, source);
+      loadVideoDetail(id);
     });
   });
 }
@@ -179,18 +89,17 @@ function updatePagination() {
   $('nextPage').disabled = currentPage >= totalPage;
 }
 
-async function loadVideoDetail(id, sourceId) {
+async function loadVideoDetail(id) {
   showPage('detail');
-  currentDetailSource = sourceId;
   const detailContent = $('detailContent');
   detailContent.innerHTML = '<div class="loading">加载中...</div>';
 
   try {
-    const data = await fetchJSON(API_BASE + 'videos/' + id + '?source=' + sourceId);
+    const data = await fetchAPI('detail', { ids: id });
 
-    if (data.code === 1 && data.video) {
-      currentVideo = data.video;
-      renderVideoDetail(data.video);
+    if (data.code === 1 && data.list && data.list.length > 0) {
+      currentVideo = data.list[0];
+      renderVideoDetail(currentVideo);
     } else {
       detailContent.innerHTML = '<div class="loading">未找到视频信息</div>';
     }
@@ -202,74 +111,71 @@ async function loadVideoDetail(id, sourceId) {
 
 function renderVideoDetail(video) {
   const detailContent = $('detailContent');
-  const playSources = video.playSources || [];
+
+  const playFrom = video.vod_play_from || '';
+  const playUrl = video.vod_play_url || '';
+
+  const playSources = [];
+  if (playFrom && playUrl) {
+    const sources = playFrom.split('$$$');
+    const urls = playUrl.split('$$$');
+
+    sources.forEach((source, index) => {
+      if (urls[index]) {
+        const episodes = urls[index].split('#').map(item => {
+          const parts = item.split('$');
+          return {
+            name: parts[0] || '',
+            url: parts[1] || ''
+          };
+        }).filter(ep => ep.name && ep.url);
+
+        if (episodes.length > 0) {
+          playSources.push({
+            name: source || '播放源' + (index + 1),
+            episodes: episodes
+          });
+        }
+      }
+    });
+  }
 
   detailContent.innerHTML = `
     <div class="detail-header">
       <div class="detail-cover">
-        <img src="${video.pic || ''}" alt="${video.name}" onerror="this.style.display='none'">
+        <img src="${video.vod_pic || ''}" alt="${video.vod_name}" onerror="this.style.display='none'">
       </div>
       <div class="detail-info">
-        <h1>${video.name}</h1>
+        <h1>${video.vod_name}</h1>
         <div class="tags">
-          ${video.typeName ? '<span class="tag highlight">' + video.typeName + '</span>' : ''}
-          ${video.year ? '<span class="tag">' + video.year + '</span>' : ''}
-          ${video.area ? '<span class="tag">' + video.area + '</span>' : ''}
-          ${video.remarks ? '<span class="tag">' + video.remarks + '</span>' : ''}
+          ${video.type_name ? '<span class="tag highlight">' + video.type_name + '</span>' : ''}
+          ${video.vod_year ? '<span class="tag">' + video.vod_year + '</span>' : ''}
+          ${video.vod_area ? '<span class="tag">' + video.vod_area + '</span>' : ''}
+          ${video.vod_remarks ? '<span class="tag">' + video.vod_remarks + '</span>' : ''}
         </div>
-        ${video.actor ? '<p style="margin-bottom:10px;color:#aaa;font-size:14px;"><strong style="color:#ccc;">演员：</strong>' + video.actor + '</p>' : ''}
-        ${video.director ? '<p style="margin-bottom:10px;color:#aaa;font-size:14px;"><strong style="color:#ccc;">导演：</strong>' + video.director + '</p>' : ''}
-        <p class="desc">${video.content || '暂无简介'}</p>
+        ${video.vod_actor ? '<p style="margin-bottom:10px;color:#aaa;font-size:14px;"><strong style="color:#ccc;">演员：</strong>' + video.vod_actor + '</p>' : ''}
+        ${video.vod_director ? '<p style="margin-bottom:10px;color:#aaa;font-size:14px;"><strong style="color:#ccc;">导演：</strong>' + video.vod_director + '</p>' : ''}
+        <p class="desc">${video.vod_content || video.vod_blurb || '暂无简介'}</p>
       </div>
     </div>
-    ${playSources.length > 0 ? `
+    ${playSources.length > 0 ? playSources.map((source, sIndex) => `
       <div class="detail-section">
-        <h3>播放列表</h3>
-        <div class="detail-source-tabs" id="detailSourceTabs">
-          ${playSources.map((source, index) => `
-            <div class="detail-source-tab ${index === 0 ? 'active' : ''}" data-source-index="${index}">
-              ${source.name} (${source.episodes.length})
-            </div>
+        <h3>${source.name}</h3>
+        <div class="play-list">
+          ${source.episodes.map((ep, eIndex) => `
+            <div class="play-item" data-source="${sIndex}" data-episode="${eIndex}">${ep.name}</div>
           `).join('')}
         </div>
-        <div id="playListContainer"></div>
       </div>
-    ` : '<div class="loading">暂无播放资源</div>'}
+    `).join('') : '<div class="loading">暂无播放资源</div>'}
   `;
 
-  if (playSources.length > 0) {
-    renderPlayList(playSources, 0);
-
-    detailContent.querySelectorAll('.detail-source-tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        const index = parseInt(tab.dataset.sourceIndex);
-        detailContent.querySelectorAll('.detail-source-tab').forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-        renderPlayList(playSources, index);
-      });
-    });
-  }
-}
-
-function renderPlayList(playSources, sourceIndex) {
-  const container = $('playListContainer');
-  if (!container) return;
-
-  const source = playSources[sourceIndex];
-  container.innerHTML = `
-    <div class="play-list">
-      ${source.episodes.map((ep, eIndex) => `
-        <div class="play-item" data-source-index="${sourceIndex}" data-episode-index="${eIndex}">${ep.name}</div>
-      `).join('')}
-    </div>
-  `;
-
-  container.querySelectorAll('.play-item').forEach(item => {
+  detailContent.querySelectorAll('.play-item').forEach(item => {
     item.addEventListener('click', () => {
-      const sIndex = parseInt(item.dataset.sourceIndex);
-      const eIndex = parseInt(item.dataset.episodeIndex);
+      const sIndex = parseInt(item.dataset.source);
+      const eIndex = parseInt(item.dataset.episode);
       const episode = playSources[sIndex].episodes[eIndex];
-      playVideo(currentVideo.name, episode.name, episode.url);
+      playVideo(video.vod_name, episode.name, episode.url);
     });
   });
 }
@@ -334,9 +240,8 @@ function initEvents() {
   });
 }
 
-async function init() {
+function init() {
   initEvents();
-  await loadSources();
   loadVideoList(1);
 }
 

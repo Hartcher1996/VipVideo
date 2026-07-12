@@ -4,44 +4,20 @@ module.exports = [
     name: '最大资源',
     baseUrl: 'https://api.zuidapi.com/api.php/provide/vod/',
     enabled: true,
-    priority: 1,
-    timeout: 15000,
-    proxy: 'http://127.0.0.1:18080',
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      'Accept': 'application/json, text/plain, */*',
-      'Referer': 'https://zuidapi.com/',
-    },
-    cacheTTL: 300,
+    priority: 1
   },
   {
     id: 'ffzyapi',
     name: '非凡资源',
     baseUrl: 'https://api.ffzyapi.com/api.php/provide/vod/',
     enabled: true,
-    priority: 2,
-    timeout: 15000,
-    proxy: 'http://127.0.0.1:18080',
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      'Accept': 'application/json, text/plain, */*',
-      'Referer': 'https://ffzyapi.com/',
-    },
-    cacheTTL: 300,
+    priority: 2
   },
   {
     id: 'lziapi',
     name: '量子资源',
     baseUrl: 'https://cj.lziapi.com/api.php/provide/vod/',
     enabled: true,
-    priority: 3,
-    timeout: 15000,
-    proxy: 'http://127.0.0.1:18080',
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      'Accept': 'application/json, text/plain, */*',
-      'Referer': 'https://lziapi.com/',
-    },
-    cacheTTL: 300,
-  },
+    priority: 3
+  }
 ];
