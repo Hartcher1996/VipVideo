@@ -15,6 +15,10 @@
           <span class="logo-icon">🎬</span>
           <span class="logo-text">VIP视频解析</span>
         </div>
+        <div class="header-actions">
+          <button id="historyBtn" class="action-btn" aria-label="观看历史">📖</button>
+          <button id="themeToggle" class="action-btn" aria-label="切换主题"><span id="themeIcon">🌙</span></button>
+        </div>
         <div class="search-box">
           <input type="text" id="searchInput" placeholder="搜索视频名称..." aria-label="搜索视频" />
           <span id="searchClear" class="search-clear" role="button" aria-label="清除搜索" style="display:none;">×</span>
@@ -31,6 +35,7 @@
       <div id="homePage" class="page active">
         <div class="section">
           <h2 class="section-title" id="listTitle">热门推荐</h2>
+          <div class="category-filter" id="categoryFilter"></div>
           <div id="videoList" class="video-grid">
             <div class="loading">加载中...</div>
           </div>
@@ -81,6 +86,14 @@
           </div>
         </div>
       </div>
+
+      <div id="historyPage" class="page">
+        <div class="detail-toolbar">
+          <button id="historyBackBtn" class="back-btn">← 返回首页</button>
+        </div>
+        <h2 class="section-title">观看历史</h2>
+        <div id="historyList"></div>
+      </div>
     </main>
 
     <footer class="footer">
@@ -90,8 +103,13 @@
     </footer>
   </div>
 
+  <script src="js/services/api.js"></script>
+  <script src="js/services/storage.js"></script>
+  <script src="js/components/videoList.js"></script>
+  <script src="js/components/videoDetail.js"></script>
+  <script src="js/components/player.js"></script>
+  <script src="js/app.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.13/dist/hls.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dplayer@1.27.1/dist/DPlayer.min.js"></script>
-  <script src="js/app.js"></script>
 </body>
 </html>

@@ -20,12 +20,20 @@ app.use((req, res, next) => {
 app.get('/api/list', async (req, res) => {
   const page = parseInt(req.query.pg) || 1;
   const keyword = req.query.wd || '';
+  const typeId = req.query.tid || '';
+  const ac = req.query.ac || '';
 
   try {
-    const data = keyword
-      ? await videoService.searchVideos(keyword, page)
-      : await videoService.getVideoList(page);
-    res.json(data);
+    if (ac === 'typelist') {
+      const data = await videoService.getCategoryList();
+      res.json(data);
+    } else if (keyword) {
+      const data = await videoService.searchVideos(keyword, page);
+      res.json(data);
+    } else {
+      const data = await videoService.getVideoList(page, keyword, typeId);
+      res.json(data);
+    }
   } catch (err) {
     console.error('API /list error:', err.message);
     res.status(500).json({ code: 0, msg: '服务器错误: ' + err.message, list: [] });

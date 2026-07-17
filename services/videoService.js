@@ -149,13 +149,14 @@ async function fetchFromSource(source, params) {
 }
 
 // 获取视频列表（优先从第一个可用源获取）
-async function getVideoList(page = 1, keyword = '') {
-  const cacheKey = `list:${page}:${keyword}`;
+async function getVideoList(page = 1, keyword = '', typeId = '') {
+  const cacheKey = `list:${page}:${keyword}:${typeId}`;
   const cached = getCache(cacheKey);
   if (cached) return cached;
 
   const params = { ac: 'videolist', pg: page };
   if (keyword) params.wd = keyword;
+  if (typeId) params.tid = typeId;
 
   for (const source of sources) {
     const data = await fetchFromSource(source, params);
@@ -234,9 +235,28 @@ async function getVideoDetail(id) {
   return { code: 1, list: [], pagecount: 1, page: 1, total: 0 };
 }
 
+async function getCategoryList() {
+  const cacheKey = 'category_list';
+  const cached = getCache(cacheKey);
+  if (cached) return cached;
+
+  const params = { ac: 'typelist' };
+
+  for (const source of sources) {
+    const data = await fetchFromSource(source, params);
+    if (data && data.list && data.list.length > 0) {
+      setCache(cacheKey, data);
+      return data;
+    }
+  }
+
+  return { code: 1, list: [] };
+}
+
 module.exports = {
   getVideoList,
   searchVideos,
   getVideoDetail,
+  getCategoryList,
   sources,
 };
