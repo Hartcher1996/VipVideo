@@ -49,7 +49,7 @@
     container.innerHTML = `
       <button class="filter-btn ${!currentTypeId ? 'active' : ''}" data-id="">全部</button>
       ${categories.map(cat => `
-        <button class="filter-btn ${currentTypeId === cat.type_id ? 'active' : ''}" data-id="${esc(cat.type_id)}">${esc(cat.type_name)}</button>
+        <button class="filter-btn ${String(currentTypeId) === String(cat.type_id) ? 'active' : ''}" data-id="${esc(cat.type_id)}">${esc(cat.type_name)}</button>
       `).join('')}
     `;
 

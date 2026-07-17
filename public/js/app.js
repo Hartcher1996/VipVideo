@@ -93,16 +93,28 @@
       const data = await VideoAPI.loadVideoList(page, keyword, typeId);
 
       if (data.code === 1 && data.list && data.list.length > 0) {
+        let filteredList = data.list;
+        
+        if (typeId && !keyword) {
+          filteredList = data.list.filter(v => String(v.type_id) === String(typeId));
+        }
+
         totalPage = data.pagecount || 1;
-        VideoListComponent.renderVideoList(data.list, (id) => loadVideoDetail(id));
-        VideoListComponent.updatePagination(
-          page,
-          totalPage,
-          () => { if (page > 1) { currentPage--; loadVideoList(currentPage, keyword, typeId); } },
-          () => { if (page < totalPage) { currentPage++; loadVideoList(currentPage, keyword, typeId); } },
-          (targetPage) => { currentPage = targetPage; loadVideoList(currentPage, keyword, typeId); }
-        );
-        VideoStorage.saveListState({ keyword, page, typeId });
+        
+        if (filteredList.length > 0) {
+          VideoListComponent.renderVideoList(filteredList, (id) => loadVideoDetail(id));
+          VideoListComponent.updatePagination(
+            page,
+            totalPage,
+            () => { if (page > 1) { currentPage--; loadVideoList(currentPage, keyword, typeId); } },
+            () => { if (page < totalPage) { currentPage++; loadVideoList(currentPage, keyword, typeId); } },
+            (targetPage) => { currentPage = targetPage; loadVideoList(currentPage, keyword, typeId); }
+          );
+          VideoStorage.saveListState({ keyword, page, typeId });
+        } else {
+          videoList.innerHTML = '<div class="loading">当前页没有该分类视频，尝试翻页</div>';
+          VideoListComponent.updatePagination(page, totalPage, () => {}, () => {}, () => {});
+        }
       } else {
         videoList.innerHTML = '<div class="loading">没有找到相关视频</div>';
         totalPage = 1;
@@ -123,11 +135,13 @@
       if (data.code === 1 && data.list) {
         VideoListComponent.renderCategories(data.list, currentTypeId, (tid) => {
           currentTypeId = tid;
+          currentKeyword = '';
           currentPage = 1;
-          const title = tid ? data.list.find(c => c.type_id === tid)?.type_name : '热门推荐';
+          document.getElementById('searchInput').value = '';
+          const title = tid ? data.list.find(c => String(c.type_id) === String(tid))?.type_name : '热门推荐';
           document.getElementById('listTitle').textContent = title || '热门推荐';
           updateBreadcrumb([{ text: '首页', page: 'home' }, { text: document.getElementById('listTitle').textContent }]);
-          loadVideoList(1, currentKeyword, tid);
+          loadVideoList(1, '', tid);
         });
       }
     } catch (error) {
