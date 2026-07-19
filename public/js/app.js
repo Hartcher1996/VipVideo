@@ -99,6 +99,10 @@
 
   async function loadVideoList(page, keyword, typeId) {
     const videoList = document.getElementById('videoList');
+    const categoryFilter = document.getElementById('categoryFilter');
+    if (categoryFilter) {
+      categoryFilter.style.display = keyword ? 'none' : 'flex';
+    }
     VideoListComponent.renderSkeletonCards(videoList);
 
     try {
