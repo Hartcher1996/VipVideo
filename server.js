@@ -5,88 +5,115 @@ const videoService = require('./services/videoService');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// CORS
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.sendStatus(200);
   next();
 });
 
-// 视频列表接口
-app.get('/api/list', async (req, res) => {
-  const page = parseInt(req.query.pg) || 1;
-  const keyword = req.query.wd || '';
-  const typeId = req.query.tid || '';
-  const ac = req.query.ac || '';
+function getParams(req) {
+  if (req.method === 'POST' && req.body) {
+    return req.body;
+  }
+  return req.query;
+}
+
+app.get('/api/sources', (req, res) => {
+  const enabledSources = videoService.getEnabledSources();
+  res.json({
+    code: 1,
+    sources: enabledSources.map(s => ({
+      id: s.id,
+      name: s.name,
+      priority: s.priority
+    }))
+  });
+});
+app.post('/api/sources', (req, res) => {
+  const enabledSources = videoService.getEnabledSources();
+  res.json({
+    code: 1,
+    sources: enabledSources.map(s => ({
+      id: s.id,
+      name: s.name,
+      priority: s.priority
+    }))
+  });
+});
+
+async function handleList(req, res) {
+  const params = getParams(req);
+  const page = parseInt(params.pg) || 1;
+  const keyword = params.wd || '';
+  const ac = params.ac || '';
+  const source = params.source || '';
 
   try {
     if (ac === 'typelist') {
-      const data = await videoService.getCategoryList();
-      res.json(data);
-    } else if (keyword) {
-      const data = await videoService.searchVideos(keyword, page);
-      res.json(data);
-    } else {
-      const data = await videoService.getVideoList(page, keyword, typeId);
-      res.json(data);
+      const data = await videoService.getCategoryList(source);
+      return res.json(data);
     }
+
+    if (keyword) {
+      const data = await videoService.searchVideos(keyword, page, source);
+      return res.json(data);
+    }
+
+    const data = await videoService.getVideoList(page, source);
+    res.json(data);
   } catch (err) {
     console.error('API /list error:', err.message);
     res.status(500).json({ code: 0, msg: '服务器错误: ' + err.message, list: [] });
   }
-});
+}
+app.get('/api/list', handleList);
+app.post('/api/list', handleList);
 
-// 搜索接口
-app.get('/api/search', async (req, res) => {
-  const keyword = req.query.wd || '';
-  const page = parseInt(req.query.pg) || 1;
+async function handleSearch(req, res) {
+  const params = getParams(req);
+  const keyword = params.wd || '';
+  const page = parseInt(params.pg) || 1;
+  const source = params.source || '';
 
   if (!keyword) {
     return res.json({ code: 0, msg: '请输入搜索关键词', list: [] });
   }
 
   try {
-    const data = await videoService.searchVideos(keyword, page);
+    const data = await videoService.searchVideos(keyword, page, source);
     res.json(data);
   } catch (err) {
     console.error('API /search error:', err.message);
     res.status(500).json({ code: 0, msg: '服务器错误: ' + err.message, list: [] });
   }
-});
+}
+app.get('/api/search', handleSearch);
+app.post('/api/search', handleSearch);
 
-// 详情接口
-app.get('/api/detail', async (req, res) => {
-  const id = req.query.ids;
+async function handleDetail(req, res) {
+  const params = getParams(req);
+  const id = params.ids;
+  const source = params.source || '';
 
   if (!id) {
     return res.json({ code: 0, msg: '缺少视频ID', list: [] });
   }
 
   try {
-    const data = await videoService.getVideoDetail(id);
+    const data = await videoService.getVideoDetail(id, source);
     res.json(data);
   } catch (err) {
     console.error('API /detail error:', err.message);
     res.status(500).json({ code: 0, msg: '服务器错误: ' + err.message, list: [] });
   }
-});
-
-// 数据源状态接口
-app.get('/api/sources', (req, res) => {
-  res.json({
-    code: 1,
-    sources: videoService.sources.map(s => ({
-      id: s.id,
-      name: s.name,
-      enabled: s.enabled,
-      priority: s.priority
-    }))
-  });
-});
+}
+app.get('/api/detail', handleDetail);
+app.post('/api/detail', handleDetail);
 
 app.listen(PORT, () => {
   const enabledSources = videoService.sources.filter(s => s.enabled);

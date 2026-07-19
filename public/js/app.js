@@ -8,6 +8,7 @@
   let currentVideo = null;
   let playSources = [];
   let currentSourceIndex = 0;
+  let availableSources = [];
 
   const pages = {
     home: document.getElementById('homePage'),
@@ -129,24 +130,57 @@
     }
   }
 
+  const DEFAULT_CATEGORIES = [
+    { type_id: 8, type_name: '爱情片' },
+    { type_id: 11, type_name: '剧情片' },
+    { type_id: 13, type_name: '国产剧' },
+    { type_id: 14, type_name: '港台剧' },
+    { type_id: 15, type_name: '日韩剧' },
+    { type_id: 16, type_name: '欧美剧' },
+    { type_id: 20, type_name: '动作片' },
+    { type_id: 21, type_name: '喜剧片' },
+    { type_id: 22, type_name: '科幻片' },
+    { type_id: 28, type_name: '综艺' },
+    { type_id: 29, type_name: '动漫' },
+    { type_id: 30, type_name: '日韩动漫' },
+    { type_id: 31, type_name: '国产动漫' },
+    { type_id: 32, type_name: '欧美动漫' },
+  ];
+
+  let categoriesCache = [];
+
   async function loadCategories() {
     try {
       const data = await VideoAPI.loadCategories();
-      if (data.code === 1 && data.list) {
-        VideoListComponent.renderCategories(data.list, currentTypeId, (tid) => {
-          currentTypeId = tid;
-          currentKeyword = '';
-          currentPage = 1;
-          document.getElementById('searchInput').value = '';
-          const title = tid ? data.list.find(c => String(c.type_id) === String(tid))?.type_name : '热门推荐';
-          document.getElementById('listTitle').textContent = title || '热门推荐';
-          updateBreadcrumb([{ text: '首页', page: 'home' }, { text: document.getElementById('listTitle').textContent }]);
-          loadVideoList(1, '', tid);
-        });
+      if (data.code === 1 && data.list && data.list.length > 0) {
+        const firstItem = data.list[0];
+        if (firstItem.type_id !== undefined && firstItem.type_name !== undefined && firstItem.vod_name === undefined) {
+          categoriesCache = data.list;
+        }
       }
     } catch (error) {
-      console.error('加载分类失败:', error);
+      console.log('分类接口不可用，使用默认分类');
     }
+
+    if (categoriesCache.length === 0) {
+      categoriesCache = DEFAULT_CATEGORIES;
+    }
+
+    renderCategories();
+  }
+
+  function renderCategories() {
+    VideoListComponent.renderCategories(categoriesCache, currentTypeId, (tid) => {
+      currentTypeId = tid;
+      currentKeyword = '';
+      currentPage = 1;
+      document.getElementById('searchInput').value = '';
+      const cat = categoriesCache.find(c => String(c.type_id) === String(tid));
+      const title = tid ? (cat?.type_name || '分类') : '热门推荐';
+      document.getElementById('listTitle').textContent = title;
+      updateBreadcrumb([{ text: '首页', page: 'home' }, { text: title }]);
+      loadVideoList(1, '', tid);
+    });
   }
 
   async function loadVideoDetail(id) {
@@ -164,6 +198,7 @@
 
         VideoStorage.addToHistory(currentVideo);
         VideoDetailComponent.renderVideoDetail(currentVideo, playSources, (episodeIndex) => {
+          showPage('player');
           PlayerComponent.playEpisode(currentVideo, playSources, currentSourceIndex, episodeIndex);
           updateBreadcrumb([
             { text: '首页', page: 'home' },
@@ -231,8 +266,100 @@
     });
   }
 
+  async function loadSources() {
+    try {
+      const data = await VideoAPI.getSources();
+      if (data.code === 1 && data.sources) {
+        availableSources = data.sources;
+        renderSourceDropdown();
+        updateSourceLabel();
+      }
+    } catch (error) {
+      console.error('加载源列表失败:', error);
+    }
+  }
+
+  function renderSourceDropdown() {
+    const dropdown = document.getElementById('sourceDropdown');
+    if (!dropdown) return;
+
+    const esc = VideoAPI.escapeHtml;
+    const currentSrc = VideoAPI.getSource();
+    dropdown.innerHTML = `
+      <div class="source-dropdown-item ${!currentSrc ? 'active' : ''}" data-id="" role="button" tabindex="0">
+        <span class="source-name">全部源</span>
+        ${!currentSrc ? '<span class="source-check">✓</span>' : ''}
+      </div>
+      ${availableSources.map(s => `
+        <div class="source-dropdown-item ${currentSrc === s.id ? 'active' : ''}" data-id="${esc(s.id)}" role="button" tabindex="0">
+          <span class="source-name">${esc(s.name)}</span>
+          ${currentSrc === s.id ? '<span class="source-check">✓</span>' : ''}
+        </div>
+      `).join('')}
+    `;
+
+    dropdown.querySelectorAll('.source-dropdown-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const sourceId = item.dataset.id || '';
+        switchSource(sourceId);
+      });
+      item.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          const sourceId = item.dataset.id || '';
+          switchSource(sourceId);
+        }
+      });
+    });
+  }
+
+  function updateSourceLabel() {
+    const label = document.getElementById('sourceLabel');
+    if (!label) return;
+
+    const currentSrc = VideoAPI.getSource();
+    if (!currentSrc) {
+      label.textContent = '全部源';
+    } else {
+      const source = availableSources.find(s => s.id === currentSrc);
+      label.textContent = source ? source.name : '全部源';
+    }
+  }
+
+  function switchSource(sourceId) {
+    VideoAPI.setSource(sourceId);
+    updateSourceLabel();
+    renderSourceDropdown();
+    const dropdown = document.getElementById('sourceDropdown');
+    if (dropdown) dropdown.style.display = 'none';
+
+    const srcName = sourceId ? (availableSources.find(s => s.id === sourceId)?.name || '全部源') : '全部源';
+    showToast(`已切换到 ${srcName}`);
+
+    if (pages.home.classList.contains('active')) {
+      currentPage = 1;
+      loadVideoList(1, currentKeyword, currentTypeId);
+      loadCategories();
+    }
+  }
+
   function initEvents() {
     document.getElementById('logoBtn').addEventListener('click', goHome);
+
+    const sourceBtn = document.getElementById('sourceBtn');
+    const sourceDropdown = document.getElementById('sourceDropdown');
+    if (sourceBtn && sourceDropdown) {
+      sourceBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        sourceDropdown.style.display = sourceDropdown.style.display === 'none' ? 'block' : 'none';
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.source-switcher')) {
+          sourceDropdown.style.display = 'none';
+        }
+      });
+    }
 
     document.getElementById('searchBtn').addEventListener('click', () => {
       const keyword = document.getElementById('searchInput').value.trim();
@@ -325,12 +452,15 @@
   }
 
   function init() {
+    VideoAPI.loadSavedSource();
+
     const theme = VideoStorage.getTheme();
     VideoStorage.setTheme(theme);
     document.getElementById('themeIcon').textContent = theme === 'dark' ? '🌙' : '☀️';
 
     initEvents();
     updateBreadcrumb([{ text: '首页', page: 'home' }]);
+    loadSources();
     loadCategories();
     loadVideoList(1, '', '');
 

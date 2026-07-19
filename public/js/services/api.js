@@ -1,101 +1,210 @@
-(function () {
+(function() {
   'use strict';
 
-  const API_BASE = '/api';
-  const apiCache = new Map();
-  let listFetchController = null;
-  let detailFetchController = null;
+  const PLACEHOLDER_COVER = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="420"><rect fill="%232a2a4a" width="300" height="420"/><text x="150" y="210" fill="%23888" font-size="18" text-anchor="middle" font-family="Arial">暂无封面</text></svg>';
+  const SOURCE_KEY = 'video_source';
 
-  function escapeHtml(str) {
-    if (str == null) return '';
+  let abortController = null;
+  const responseCache = new Map();
+  const CACHE_TTL = 60 * 1000;
+  let currentSource = '';
+  const inFlightRequests = new Set();
+
+  function esc(str) {
     const div = document.createElement('div');
-    div.textContent = String(str);
+    div.textContent = str || '';
     return div.innerHTML;
   }
 
-  async function fetchAPI(endpoint, params, signal) {
-    const query = new URLSearchParams(params).toString();
-    const key = endpoint + '?' + query;
-    const url = API_BASE + '/' + endpoint + (query ? '?' + query : '');
+  function setSource(sourceId) {
+    currentSource = sourceId || '';
+    try {
+      localStorage.setItem(SOURCE_KEY, currentSource);
+    } catch (e) {}
+    responseCache.clear();
+  }
 
-    if (apiCache.has(key)) {
-      const cached = apiCache.get(key);
-      if (Date.now() - cached.time < 60000) {
-        return cached.data;
+  function getSource() {
+    return currentSource;
+  }
+
+  function loadSavedSource() {
+    try {
+      const saved = localStorage.getItem(SOURCE_KEY);
+      if (saved) {
+        currentSource = saved;
+      }
+    } catch (e) {}
+  }
+
+  function hasChinese(str) {
+    return /[\u4e00-\u9fa5]/.test(str);
+  }
+
+  function paramsHaveChinese(params) {
+    for (const key in params) {
+      if (params[key] && hasChinese(String(params[key]))) {
+        return true;
       }
     }
+    return false;
+  }
 
-    const response = await fetch(url, { signal });
+  async function fetchWithAbort(url, options) {
+    const cacheKey = url + (options.body || '');
+    const cached = responseCache.get(cacheKey);
+    if (cached && Date.now() - cached.time < CACHE_TTL) {
+      return cached.data;
+    }
+
+    const response = await fetch(url, options);
     if (!response.ok) {
       const text = await response.text();
       console.error('请求失败:', url, '状态:', response.status, '响应:', text.substring(0, 200));
       throw new Error('请求失败: ' + response.status);
     }
     const data = await response.json();
-    apiCache.set(key, { data, time: Date.now() });
+    responseCache.set(cacheKey, { data, time: Date.now() });
     return data;
+  }
+
+  async function fetchAPI(endpoint, params = {}, options = {}) {
+    const { abortable = true } = options;
+
+    if (abortable && abortController) {
+      abortController.abort();
+    }
+
+    const controller = abortable ? new AbortController() : null;
+    if (abortable) {
+      abortController = controller;
+    }
+
+    const signal = controller ? controller.signal : undefined;
+    const usePost = paramsHaveChinese(params);
+
+    try {
+      if (usePost) {
+        const body = { ...params };
+        if (currentSource) {
+          body.source = currentSource;
+        }
+        return await fetchWithAbort(`/api/${endpoint}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+          signal
+        });
+      } else {
+        const searchParams = new URLSearchParams(params);
+        if (currentSource) {
+          searchParams.set('source', currentSource);
+        }
+        const url = `/api/${endpoint}?${searchParams.toString()}`;
+        return await fetchWithAbort(url, { signal });
+      }
+    } catch (error) {
+      if (error.name !== 'AbortError') {
+        console.error(`[VideoAPI] ${endpoint} 失败:`, error);
+      }
+      throw error;
+    }
   }
 
   async function loadVideoList(page, keyword, typeId) {
-    page = page || 1;
-    keyword = keyword || '';
-
-    if (listFetchController) listFetchController.abort();
-    listFetchController = new AbortController();
-
     const params = { pg: page };
     if (keyword) params.wd = keyword;
     if (typeId) params.tid = typeId;
+    return fetchAPI('list', params);
+  }
 
-    const data = await fetchAPI('list', params, listFetchController.signal);
-    return data;
+  async function getCategories() {
+    return fetchAPI('list', { ac: 'typelist' }, { abortable: false });
+  }
+
+  async function searchVideos(keyword, page) {
+    return fetchAPI('search', { wd: keyword, pg: page });
   }
 
   async function loadVideoDetail(id) {
-    if (detailFetchController) detailFetchController.abort();
-    detailFetchController = new AbortController();
-    const data = await fetchAPI('detail', { ids: id }, detailFetchController.signal);
-    return data;
+    return fetchAPI('detail', { ids: id }, { abortable: false });
   }
 
-  async function loadCategories() {
-    const data = await fetchAPI('list', { ac: 'typelist' });
-    return data;
+  async function getSources() {
+    return fetchAPI('sources', {}, { abortable: false });
+  }
+
+  function parseEpisodes(video) {
+    const playUrl = video.vod_play_url || '';
+    if (!playUrl) return [];
+
+    const episodes = [];
+    const groups = playUrl.split('$$$');
+
+    groups.forEach((group, groupIndex) => {
+      const episodeList = group.split('#').filter(Boolean);
+      episodeList.forEach((item, i) => {
+        const parts = item.split('$');
+        if (parts.length >= 2) {
+          episodes.push({
+            name: parts[0],
+            url: parts[1],
+            groupIndex: groupIndex,
+            index: i
+          });
+        }
+      });
+    });
+
+    return episodes;
   }
 
   function parsePlaySources(video) {
-    const playFrom = video.vod_play_from || '';
     const playUrl = video.vod_play_url || '';
+    const playNote = video.vod_play_from || '';
+    if (!playUrl) return [];
 
     const sources = [];
-    if (playFrom && playUrl) {
-      const fromArr = playFrom.split('$$$');
-      const urlArr = playUrl.split('$$$');
+    const groups = playUrl.split('$$$');
+    const names = playNote ? playNote.split('$$$') : [];
 
-      fromArr.forEach((source, index) => {
-        if (urlArr[index]) {
-          const episodes = urlArr[index].split('#').map(item => {
-            const parts = item.split('$');
-            return { name: parts[0] || '', url: parts[1] || '' };
-          }).filter(ep => ep.name && ep.url);
-
-          if (episodes.length > 0) {
-            sources.push({
-              name: source || '播放源' + (index + 1),
-              episodes: episodes
-            });
-          }
+    groups.forEach((group, groupIndex) => {
+      const episodeList = group.split('#').filter(Boolean);
+      const episodes = [];
+      episodeList.forEach((item, i) => {
+        const parts = item.split('$');
+        if (parts.length >= 2) {
+          episodes.push({
+            name: parts[0],
+            url: parts[1],
+            index: i
+          });
         }
       });
-    }
+
+      if (episodes.length > 0) {
+        sources.push({
+          name: names[groupIndex] || `线路${groupIndex + 1}`,
+          episodes: episodes
+        });
+      }
+    });
+
     return sources;
   }
 
   window.VideoAPI = {
+    PLACEHOLDER_COVER,
+    setSource,
+    getSource,
+    loadSavedSource,
     loadVideoList,
+    getCategories,
+    searchVideos,
     loadVideoDetail,
-    loadCategories,
+    getSources,
+    parseEpisodes,
     parsePlaySources,
-    escapeHtml
+    escapeHtml: esc
   };
 })();
