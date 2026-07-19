@@ -88,10 +88,6 @@ body {
   gap: 10px;
   font-size: 22px;
   font-weight: bold;
-  background: var(--accent-gradient);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
   white-space: nowrap;
   cursor: pointer;
   user-select: none;
@@ -103,7 +99,14 @@ body {
 
 .logo-icon {
   font-size: 28px;
-  -webkit-text-fill-color: initial;
+  line-height: 1;
+}
+
+.logo-text {
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .source-switcher {
