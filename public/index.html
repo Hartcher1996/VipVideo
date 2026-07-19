@@ -11,24 +11,34 @@
   <div id="app">
     <header class="header">
       <div class="container">
-        <div class="logo" id="logoBtn">
-          <span class="logo-icon">🎬</span>
-          <span class="logo-text">VIP视频解析</span>
-        </div>
-        <div class="header-actions">
-          <div class="source-switcher">
-            <button id="sourceBtn" class="action-btn source-btn" aria-label="切换源">
-              <span id="sourceLabel">全部源</span> ▾
-            </button>
-            <div id="sourceDropdown" class="source-dropdown" style="display:none;"></div>
+        <div class="header-left">
+          <div class="logo" id="logoBtn">
+            <span class="logo-icon">🎬</span>
+            <span class="logo-text">VIP视频解析</span>
           </div>
-          <button id="historyBtn" class="action-btn" aria-label="观看历史">📖</button>
-          <button id="themeToggle" class="action-btn" aria-label="切换主题"><span id="themeIcon">🌙</span></button>
+          <div class="source-switcher">
+            <button id="sourceBtn" class="source-btn" aria-label="切换源">
+              <span class="source-icon">📡</span>
+              <span id="sourceLabel">全部源</span>
+              <span class="source-arrow">▾</span>
+            </button>
+            <div id="sourceDropdown" class="source-dropdown"></div>
+          </div>
         </div>
         <div class="search-box">
-          <input type="text" id="searchInput" placeholder="搜索视频名称..." aria-label="搜索视频" />
+          <span class="search-icon">🔍</span>
+          <input type="text" id="searchInput" placeholder="搜索电影、电视剧、动漫..." aria-label="搜索视频" />
           <span id="searchClear" class="search-clear" role="button" aria-label="清除搜索" style="display:none;">×</span>
           <button id="searchBtn" class="search-btn" aria-label="搜索">搜索</button>
+        </div>
+        <div class="header-actions">
+          <button id="historyBtn" class="action-btn" aria-label="观看历史">
+            <span class="btn-icon">📖</span>
+            <span class="btn-text">历史</span>
+          </button>
+          <button id="themeToggle" class="action-btn" aria-label="切换主题">
+            <span id="themeIcon" class="btn-icon">🌙</span>
+          </button>
         </div>
       </div>
     </header>

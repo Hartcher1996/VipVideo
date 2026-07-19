@@ -8,7 +8,18 @@
   let currentVideo = null;
   let playSources = [];
   let currentSourceIndex = 0;
+  let scrollPosition = 0;
   let availableSources = [];
+
+  function saveScrollPosition() {
+    scrollPosition = window.scrollY || window.pageYOffset;
+  }
+
+  function restoreScrollPosition() {
+    if (scrollPosition > 0) {
+      window.scrollTo(0, scrollPosition);
+    }
+  }
 
   const pages = {
     home: document.getElementById('homePage'),
@@ -113,18 +124,50 @@
           );
           VideoStorage.saveListState({ keyword, page, typeId });
         } else {
-          videoList.innerHTML = '<div class="loading">当前页没有该分类视频，尝试翻页</div>';
+          videoList.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-icon">🔍</div>
+              <div class="empty-title">本页暂无该分类内容</div>
+              <div class="empty-desc">试试翻到下一页，说不定会有惊喜哦～</div>
+              ${page < totalPage ? `<button class="retry-btn" id="emptyNextBtn">下一页看看</button>` : ''}
+            </div>
+          `;
+          const nextBtn = document.getElementById('emptyNextBtn');
+          if (nextBtn) {
+            nextBtn.addEventListener('click', () => {
+              currentPage++;
+              loadVideoList(currentPage, keyword, typeId);
+            });
+          }
           VideoListComponent.updatePagination(page, totalPage, () => {}, () => {}, () => {});
         }
       } else {
-        videoList.innerHTML = '<div class="loading">没有找到相关视频</div>';
+        const isSearch = !!keyword;
+        videoList.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">${isSearch ? '🔍' : '📭'}</div>
+            <div class="empty-title">${isSearch ? '没有找到相关视频' : '暂无内容'}</div>
+            <div class="empty-desc">${isSearch ? '换个关键词试试吧，或者检查一下拼写是否正确' : '稍等片刻，内容马上就来～'}</div>
+          </div>
+        `;
         totalPage = 1;
         VideoListComponent.updatePagination(page, totalPage, () => {}, () => {}, () => {});
       }
     } catch (error) {
       if (error.name !== 'AbortError') {
-        videoList.innerHTML = '<div class="loading">加载失败，请稍后重试</div>';
-        showToast('加载失败，请稍后重试');
+        videoList.innerHTML = `
+          <div class="error-state">
+            <div class="error-icon">😵</div>
+            <div class="error-title">加载失败</div>
+            <div class="error-desc">网络好像出了点小问题，请检查网络连接后重试</div>
+            <button class="retry-btn" id="retryBtn">重新加载</button>
+          </div>
+        `;
+        const retryBtn = document.getElementById('retryBtn');
+        if (retryBtn) {
+          retryBtn.addEventListener('click', () => loadVideoList(page, keyword, typeId));
+        }
+        showToast('加载失败，请重试');
         console.error(error);
       }
     }
@@ -184,9 +227,11 @@
   }
 
   async function loadVideoDetail(id) {
+    saveScrollPosition();
     showPage('detail');
     const detailContent = document.getElementById('detailContent');
     detailContent.innerHTML = '<div class="loading">加载中...</div>';
+    window.scrollTo(0, 0);
 
     try {
       const data = await VideoAPI.loadVideoDetail(id);
@@ -198,6 +243,7 @@
 
         VideoStorage.addToHistory(currentVideo);
         VideoDetailComponent.renderVideoDetail(currentVideo, playSources, (episodeIndex) => {
+          saveScrollPosition();
           showPage('player');
           PlayerComponent.playEpisode(currentVideo, playSources, currentSourceIndex, episodeIndex);
           updateBreadcrumb([
@@ -212,11 +258,28 @@
           { text: currentVideo.vod_name }
         ]);
       } else {
-        detailContent.innerHTML = '<div class="loading">未找到视频信息</div>';
+        detailContent.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">🤔</div>
+            <div class="empty-title">未找到视频信息</div>
+            <div class="empty-desc">这个视频可能已经下线了，去看看其他精彩内容吧</div>
+          </div>
+        `;
       }
     } catch (error) {
       if (error.name !== 'AbortError') {
-        detailContent.innerHTML = '<div class="loading">加载失败，请稍后重试</div>';
+        detailContent.innerHTML = `
+          <div class="error-state">
+            <div class="error-icon">😵</div>
+            <div class="error-title">加载失败</div>
+            <div class="error-desc">网络好像出了点小问题，请检查网络连接后重试</div>
+            <button class="retry-btn" id="detailRetryBtn">重新加载</button>
+          </div>
+        `;
+        const retryBtn = document.getElementById('detailRetryBtn');
+        if (retryBtn) {
+          retryBtn.addEventListener('click', () => loadVideoDetail(id));
+        }
         showToast('加载详情失败');
         console.error(error);
       }
@@ -229,7 +292,18 @@
     const esc = VideoAPI.escapeHtml;
 
     if (history.length === 0) {
-      container.innerHTML = '<div class="loading">暂无观看历史</div>';
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">📖</div>
+          <div class="empty-title">还没有观看记录</div>
+          <div class="empty-desc">去发现精彩内容吧，你的观看记录会保存在这里</div>
+          <button class="retry-btn" id="historyGoHomeBtn">去发现</button>
+        </div>
+      `;
+      const goHomeBtn = document.getElementById('historyGoHomeBtn');
+      if (goHomeBtn) {
+        goHomeBtn.addEventListener('click', goHome);
+      }
       return;
     }
 
@@ -330,8 +404,8 @@
     VideoAPI.setSource(sourceId);
     updateSourceLabel();
     renderSourceDropdown();
-    const dropdown = document.getElementById('sourceDropdown');
-    if (dropdown) dropdown.style.display = 'none';
+    const sourceSwitcher = document.querySelector('.source-switcher');
+    if (sourceSwitcher) sourceSwitcher.classList.remove('open');
 
     const srcName = sourceId ? (availableSources.find(s => s.id === sourceId)?.name || '全部源') : '全部源';
     showToast(`已切换到 ${srcName}`);
@@ -348,15 +422,16 @@
 
     const sourceBtn = document.getElementById('sourceBtn');
     const sourceDropdown = document.getElementById('sourceDropdown');
-    if (sourceBtn && sourceDropdown) {
+    const sourceSwitcher = document.querySelector('.source-switcher');
+    if (sourceBtn && sourceSwitcher) {
       sourceBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        sourceDropdown.style.display = sourceDropdown.style.display === 'none' ? 'block' : 'none';
+        sourceSwitcher.classList.toggle('open');
       });
 
       document.addEventListener('click', (e) => {
         if (!e.target.closest('.source-switcher')) {
-          sourceDropdown.style.display = 'none';
+          sourceSwitcher.classList.remove('open');
         }
       });
     }
@@ -401,9 +476,22 @@
           currentTypeId = state.typeId;
           currentPage = state.page;
           document.getElementById('searchInput').value = state.keyword;
-          document.getElementById('listTitle').textContent = state.keyword ? `搜索: ${state.keyword}` : '热门推荐';
+          const title = state.keyword ? `搜索: ${state.keyword}` : '热门推荐';
+          document.getElementById('listTitle').textContent = title;
+
+          let breadcrumbItems = [{ text: '首页', page: 'home' }];
+          if (state.keyword) {
+            breadcrumbItems.push({ text: `搜索「${state.keyword}」` });
+          } else if (state.typeId) {
+            const cat = categoriesCache.find(c => String(c.type_id) === String(state.typeId));
+            breadcrumbItems.push({ text: cat?.type_name || '分类' });
+          }
+          updateBreadcrumb(breadcrumbItems);
+
           showPage('home');
-          updateBreadcrumb([{ text: '首页', page: 'home' }]);
+          loadVideoList(currentPage, currentKeyword, currentTypeId).then(() => {
+            setTimeout(restoreScrollPosition, 50);
+          });
         });
       }
     };
@@ -419,6 +507,7 @@
           { text: currentVideo.vod_name }
         ]);
       }
+      setTimeout(restoreScrollPosition, 50);
     });
 
     document.getElementById('prevEpBtn').addEventListener('click', () => PlayerComponent.prevEpisode());

@@ -3,9 +3,16 @@
 
   const PLACEHOLDER_COVER = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 200 300%22%3E%3Crect fill=%22%232a2a4a%22 width=%22200%22 height=%22300%22/%3E%3Ctext fill=%22%23666%22 font-size=%2214%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22%3E暂无封面%3C/text%3E%3C/svg%3E';
 
+  function stripHtml(html) {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html || '';
+    return tmp.textContent || tmp.innerText || '';
+  }
+
   function renderVideoDetail(video, playSources, onEpisodeClick) {
     const container = document.getElementById('detailContent');
     const esc = VideoAPI.escapeHtml;
+    const desc = stripHtml(video.vod_content || video.vod_blurb) || '暂无简介';
 
     container.innerHTML = `
       <div class="detail-header">
@@ -22,19 +29,15 @@
           </div>
           ${video.vod_actor ? '<p class="detail-meta-line"><strong>演员：</strong>' + esc(video.vod_actor) + '</p>' : ''}
           ${video.vod_director ? '<p class="detail-meta-line"><strong>导演：</strong>' + esc(video.vod_director) + '</p>' : ''}
-          <p class="desc">${esc(video.vod_content || video.vod_blurb) || '暂无简介'}</p>
+          <p class="desc">${esc(desc)}</p>
         </div>
       </div>
       ${playSources.length > 0 ? `
         <div class="detail-section">
-          <div class="source-tabs" id="sourceTabs">
-            ${playSources.map((s, i) => `
-              <div class="source-tab ${i === 0 ? 'active' : ''}" data-index="${i}" role="button" tabindex="0">${esc(s.name)}</div>
-            `).join('')}
-          </div>
+          <h3 class="section-subtitle">播放选集</h3>
           <div class="play-list" id="detailPlayList"></div>
         </div>
-      ` : '<div class="loading">暂无播放资源</div>'}
+      ` : '<div class="empty-state"><div class="empty-icon">🎬</div><div class="empty-title">暂无播放资源</div><div class="empty-desc">换个视频看看吧～</div></div>'}
     `;
 
     if (playSources.length > 0) {

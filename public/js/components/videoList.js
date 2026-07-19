@@ -16,12 +16,17 @@
 
     videoList.innerHTML = videos.map(video => `
       <div class="video-card" data-id="${esc(video.vod_id)}" role="button" tabindex="0">
-        <img class="cover" loading="lazy" src="${esc(video.vod_pic) || PLACEHOLDER_COVER}" alt="${esc(video.vod_name)}" onerror="this.src='${PLACEHOLDER_COVER}'">
+        <div class="cover-wrapper">
+          <img class="cover" loading="lazy" src="${esc(video.vod_pic) || PLACEHOLDER_COVER}" alt="${esc(video.vod_name)}" onerror="this.src='${PLACEHOLDER_COVER}'">
+          <div class="play-overlay">
+            <div class="play-icon">▶</div>
+          </div>
+        </div>
         <div class="info">
           <div class="title">${esc(video.vod_name)}</div>
           <div class="meta">
             <span class="type">${esc(video.type_name) || ''}</span>
-            <span>${esc(video.vod_remarks) || ''}</span>
+            <span class="remark">${esc(video.vod_remarks) || ''}</span>
           </div>
         </div>
       </div>
