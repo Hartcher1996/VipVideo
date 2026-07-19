@@ -345,8 +345,13 @@
       const data = await VideoAPI.getSources();
       if (data.code === 1 && data.sources) {
         availableSources = data.sources;
-        renderSourceDropdown();
-        updateSourceLabel();
+        
+        if (!VideoAPI.getSource() && availableSources.length > 0) {
+          switchSource(availableSources[0].id);
+        } else {
+          renderSourceDropdown();
+          updateSourceLabel();
+        }
       }
     } catch (error) {
       console.error('加载源列表失败:', error);
@@ -360,10 +365,6 @@
     const esc = VideoAPI.escapeHtml;
     const currentSrc = VideoAPI.getSource();
     dropdown.innerHTML = `
-      <div class="source-dropdown-item ${!currentSrc ? 'active' : ''}" data-id="" role="button" tabindex="0">
-        <span class="source-name">全部源</span>
-        ${!currentSrc ? '<span class="source-check">✓</span>' : ''}
-      </div>
       ${availableSources.map(s => `
         <div class="source-dropdown-item ${currentSrc === s.id ? 'active' : ''}" data-id="${esc(s.id)}" role="button" tabindex="0">
           <span class="source-name">${esc(s.name)}</span>
@@ -392,12 +393,8 @@
     if (!label) return;
 
     const currentSrc = VideoAPI.getSource();
-    if (!currentSrc) {
-      label.textContent = '全部源';
-    } else {
-      const source = availableSources.find(s => s.id === currentSrc);
-      label.textContent = source ? source.name : '全部源';
-    }
+    const source = availableSources.find(s => s.id === currentSrc);
+    label.textContent = source ? source.name : availableSources[0]?.name || '选择源';
   }
 
   function switchSource(sourceId) {
@@ -407,7 +404,7 @@
     const sourceSwitcher = document.querySelector('.source-switcher');
     if (sourceSwitcher) sourceSwitcher.classList.remove('open');
 
-    const srcName = sourceId ? (availableSources.find(s => s.id === sourceId)?.name || '全部源') : '全部源';
+    const srcName = availableSources.find(s => s.id === sourceId)?.name || '选择源';
     showToast(`已切换到 ${srcName}`);
 
     if (pages.home.classList.contains('active')) {
