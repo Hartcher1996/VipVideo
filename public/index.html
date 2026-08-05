@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VIP视频解析</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app">
+    <header class="header">
+      <div class="container header-container">
+        <div class="header-left">
+          <div class="logo" id="logoBtn">
+            <span class="logo-icon">🎬</span>
+            <span class="logo-text">VIP视频解析</span>
+          </div>
+        </div>
+        <div class="header-search-wrap">
+          <div class="source-switcher header-source">
+            <button id="sourceBtn" class="source-btn" aria-label="切换源">
+              <span class="source-icon">📡</span>
+              <span id="sourceLabel">全部源</span>
+              <span class="source-arrow">▾</span>
+            </button>
+            <div id="sourceDropdown" class="source-dropdown"></div>
+          </div>
+          <div class="search-box header-search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="searchInput" placeholder="搜索电影、电视剧、动漫..." aria-label="搜索视频" />
+            <button id="searchBtn" class="search-btn" aria-label="搜索">搜索</button>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button id="historyBtn" class="action-btn" aria-label="观看历史">
+            <span class="btn-icon">📖</span>
+            <span class="btn-text">历史</span>
+          </button>
+          <button id="themeToggle" class="action-btn" aria-label="切换主题">
+            <span id="themeIcon" class="btn-icon">🌙</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="main container">
+      <nav class="breadcrumb" id="breadcrumb">
+        <span class="breadcrumb-item" data-page="home">首页</span>
+      </nav>
+
+      <div id="homePage" class="page active">
+        <section class="home-hero">
+          <h1 class="hero-title">想看的片，<span class="hero-hl">30秒直达播放源</span></h1>
+          <p class="hero-sub">VIP视频聚合搜索引擎 · 电影 / 剧 / 动漫 / 综艺一网打尽 · 多源智能切换</p>
+
+          <div class="home-search-wrap">
+            <div class="home-search-inner">
+              <div class="source-switcher hero-source">
+                <button id="heroSourceBtn" class="hero-source-btn" aria-label="切换源">
+                  <span>📡</span>
+                  <span id="heroSourceLabel">全部源</span>
+                  <span class="hero-source-arrow">▾</span>
+                </button>
+                <div id="heroSourceDropdown" class="source-dropdown"></div>
+              </div>
+              <div class="home-search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="heroSearchInput" placeholder="搜索电影、电视剧、动漫、演员..." aria-label="搜索视频" />
+                <button id="heroSearchBtn" class="hero-search-btn" aria-label="搜索">搜索</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="hot-label">🔥 今天大家都在搜</div>
+          <div class="hot-tags" id="hotTags"></div>
+        </section>
+
+        <section class="home-decor-cats">
+          <div class="decor-cat"><div class="decor-emoji">🎬</div><div class="decor-name">电影</div></div>
+          <div class="decor-cat"><div class="decor-emoji">📺</div><div class="decor-name">电视剧</div></div>
+          <div class="decor-cat"><div class="decor-emoji">🌀</div><div class="decor-name">动漫</div></div>
+          <div class="decor-cat"><div class="decor-emoji">🎤</div><div class="decor-name">综艺</div></div>
+          <div class="decor-cat"><div class="decor-emoji">🎙️</div><div class="decor-name">纪录片</div></div>
+          <div class="decor-cat"><div class="decor-emoji">🎞️</div><div class="decor-name">短剧</div></div>
+          <div class="decor-cat"><div class="decor-emoji">🏛️</div><div class="decor-name">经典老片</div></div>
+          <div class="decor-cat"><div class="decor-emoji">🌏</div><div class="decor-name">海外影视</div></div>
+        </section>
+
+        <section class="home-stats">
+          <div class="stat-item"><div class="stat-num">100+</div><div class="stat-lbl">全网资源聚合</div></div>
+          <div class="stat-item"><div class="stat-num">&lt;200ms</div><div class="stat-lbl">毫秒级搜索响应</div></div>
+          <div class="stat-item"><div class="stat-num">4路+</div><div class="stat-lbl">多播放源备份</div></div>
+          <div class="stat-item"><div class="stat-num">0强制</div><div class="stat-lbl">无贴片无会员弹窗</div></div>
+        </section>
+
+      </div>
+
+      <div id="searchPage" class="page">
+        <div class="section">
+          <h2 class="section-title" id="listTitle">搜索结果</h2>
+          <div id="videoList" class="video-grid"></div>
+          <div class="pagination" id="paginationWrap">
+            <button id="prevPage" class="page-btn" disabled>上一页</button>
+            <span id="pageInfo" class="page-info">第 1 页</span>
+            <button id="nextPage" class="page-btn">下一页</button>
+            <input type="number" id="jumpPage" class="jump-input" min="1" placeholder="1" aria-label="跳转到页码" />
+            <button id="jumpBtn" class="page-btn">跳转</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="detailPage" class="page">
+        <div id="detailContent" class="detail-content">
+          <div class="loading">加载中...</div>
+        </div>
+      </div>
+
+      <div id="playerPage" class="page">
+        <div class="player-layout">
+          <div class="player-combined" id="playerCombined">
+            <div class="player-main">
+              <div class="player-wrapper">
+                <div id="dplayer"></div>
+              </div>
+              <div class="player-header">
+                <h2 id="playerTitle" class="player-title"></h2>
+                <div class="player-controls">
+                  <button id="wideScreenBtn" class="ep-btn" title="宽屏模式（隐藏剧集）">⛶ 宽屏</button>
+                </div>
+              </div>
+            </div>
+            <div class="player-sidebar" id="playerSidebar">
+              <div class="sidebar-section">
+                <div class="sidebar-tabs" id="playerSourceTabs"></div>
+              </div>
+              <div class="sidebar-section">
+                <h3 class="sidebar-title collapsible" id="episodeCollapse" title="点击折叠/展开">
+                  <span>剧集列表 <span id="episodeCountLabel" class="sidebar-count" style="color:var(--text-muted); font-size:12px; font-weight:400;"></span></span>
+                  <span class="arrow">▾</span>
+                </h3>
+                <div class="episode-list-wrapper">
+                  <div class="episode-list" id="playerEpisodeList"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="historyPage" class="page">
+        <h2 class="section-title">观看历史</h2>
+        <div id="historyList"></div>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="container">
+        <p>© 2026 VIP视频解析 - 仅供学习交流使用</p>
+      </div>
+    </footer>
+  </div>
+
+  <script src="js/services/api.js"></script>
+  <script src="js/services/storage.js"></script>
+  <script src="js/components/videoList.js"></script>
+  <script src="js/components/videoDetail.js"></script>
+  <script src="js/components/player.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/hls.min.js"></script>
+  <script src="js/DPlayer.min.js"></script>
+</body>
+</html>
