@@ -1,6 +1,7 @@
 # VIP视频解析
 
 一个基于 Node.js + Express 的多源聚合视频网站，支持数据源切换、聚合搜索、缓存和熔断器机制。
+<img width="2549" height="1364" alt="image" src="https://github.com/user-attachments/assets/9030fad8-753f-4577-86a2-f264a222d0c4" />
 
 ## 功能特性
 
