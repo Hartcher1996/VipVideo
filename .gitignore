@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Wrangler / Cloudflare local artifacts
+.wrangler/
+.wrangler-logs/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Editor/OS
+.DS_Store
+.idea/
+.vscode/
+Thumbs.db
