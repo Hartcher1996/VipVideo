@@ -29,14 +29,13 @@ async function getParams(context) {
 async function handle(context) {
   const params = await getParams(context);
   const id = params.ids;
-  const source = params.source || '';
 
   if (!id) {
     return json({ code: 0, msg: '缺少视频ID', list: [] });
   }
 
   try {
-    const data = await getVideoDetail(id, source);
+    const data = await getVideoDetail(id);
     return json(data);
   } catch (err) {
     console.error('API /detail error:', err.message);

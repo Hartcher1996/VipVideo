@@ -1,5 +1,8 @@
 const express = require('express');
 const path = require('path');
+const https = require('https');
+const http = require('http');
+const { URL } = require('url');
 const videoService = require('./services/videoService');
 const siteConfig = require('./config/site.config');
 
@@ -23,6 +26,59 @@ function getParams(req) {
   }
   return req.query;
 }
+
+app.get('/api/parse', async (req, res) => {
+  const targetUrl = req.query.url;
+  if (!targetUrl) {
+    return res.status(400).json({ code: 0, msg: '缺少 url 参数' });
+  }
+
+  try {
+    const parsed = new URL(targetUrl);
+    const lib = parsed.protocol === 'https:' ? https : http;
+    const options = {
+      hostname: parsed.hostname,
+      port: parsed.port || (parsed.protocol === 'https:' ? 443 : 80),
+      path: parsed.pathname + parsed.search,
+      method: 'GET',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+        'Referer': parsed.origin,
+      },
+      timeout: 15000,
+    };
+
+    const proxyReq = lib.request(options, (proxyRes) => {
+      const contentType = proxyRes.headers['content-type'] || '';
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Cache-Control', 'no-cache');
+      if (proxyRes.headers['content-length']) {
+        res.setHeader('Content-Length', proxyRes.headers['content-length']);
+      }
+      proxyRes.pipe(res);
+    });
+
+    proxyReq.on('error', (err) => {
+      if (!res.headersSent) {
+        res.status(502).json({ code: 0, msg: '代理请求失败: ' + err.message });
+      }
+    });
+
+    proxyReq.on('timeout', () => {
+      proxyReq.destroy();
+      if (!res.headersSent) {
+        res.status(504).json({ code: 0, msg: '代理请求超时' });
+      }
+    });
+
+    proxyReq.end();
+  } catch (err) {
+    res.status(500).json({ code: 0, msg: '解析失败: ' + err.message });
+  }
+});
 
 /**
  * 站点全局配置（与前端共享同一份文件）
@@ -69,20 +125,19 @@ async function handleList(req, res) {
   const page = parseInt(params.pg) || 1;
   const keyword = params.wd || '';
   const ac = params.ac || '';
-  const source = params.source || '';
 
   try {
     if (ac === 'typelist') {
-      const data = await videoService.getCategoryList(source);
+      const data = await videoService.getCategoryList();
       return res.json(data);
     }
 
     if (keyword) {
-      const data = await videoService.searchVideos(keyword, page, source);
+      const data = await videoService.searchVideos(keyword, page);
       return res.json(data);
     }
 
-    const data = await videoService.getVideoList(page, source);
+    const data = await videoService.getVideoList(page);
     res.json(data);
   } catch (err) {
     console.error('API /list error:', err.message);
@@ -96,14 +151,13 @@ async function handleSearch(req, res) {
   const params = getParams(req);
   const keyword = params.wd || '';
   const page = parseInt(params.pg) || 1;
-  const source = params.source || '';
 
   if (!keyword) {
     return res.json({ code: 0, msg: '请输入搜索关键词', list: [] });
   }
 
   try {
-    const data = await videoService.searchVideos(keyword, page, source);
+    const data = await videoService.searchVideos(keyword, page);
     res.json(data);
   } catch (err) {
     console.error('API /search error:', err.message);
@@ -116,14 +170,13 @@ app.post('/api/search', handleSearch);
 async function handleDetail(req, res) {
   const params = getParams(req);
   const id = params.ids;
-  const source = params.source || '';
 
   if (!id) {
     return res.json({ code: 0, msg: '缺少视频ID', list: [] });
   }
 
   try {
-    const data = await videoService.getVideoDetail(id, source);
+    const data = await videoService.getVideoDetail(id);
     res.json(data);
   } catch (err) {
     console.error('API /detail error:', err.message);

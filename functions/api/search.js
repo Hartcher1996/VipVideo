@@ -30,14 +30,13 @@ async function handle(context) {
   const params = await getParams(context);
   const keyword = params.wd || '';
   const page = parseInt(params.pg) || 1;
-  const source = params.source || '';
 
   if (!keyword) {
     return json({ code: 0, msg: '请输入搜索关键词', list: [] });
   }
 
   try {
-    const data = await searchVideos(keyword, page, source);
+    const data = await searchVideos(keyword, page);
     return json(data);
   } catch (err) {
     console.error('API /search error:', err.message);

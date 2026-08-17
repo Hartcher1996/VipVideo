@@ -4,169 +4,221 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>VIP视频解析</title>
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css?v=20260817v35home">
 </head>
-<body>
+<body data-page="home" data-theme="dark">
   <div id="app">
-    <header class="header">
-      <div class="container header-container">
-        <div class="header-left">
-          <div class="logo" id="logoBtn">
-            <span class="logo-icon">🎬</span>
-            <span class="logo-text">VIP视频解析</span>
-          </div>
-        </div>
-        <div class="header-search-wrap">
-          <div class="source-switcher header-source">
-            <button id="sourceBtn" class="source-btn" aria-label="切换源">
-              <span class="source-icon">📡</span>
-              <span id="sourceLabel">全部源</span>
-              <span class="source-arrow">▾</span>
-            </button>
-            <div id="sourceDropdown" class="source-dropdown"></div>
-          </div>
-          <div class="search-box header-search-box">
-            <span class="search-icon">🔍</span>
-            <input type="text" id="searchInput" placeholder="搜索电影、电视剧、动漫..." aria-label="搜索视频" />
-            <button id="searchBtn" class="search-btn" aria-label="搜索">搜索</button>
-          </div>
-        </div>
-        <div class="header-actions">
-          <button id="historyBtn" class="action-btn" aria-label="观看历史">
-            <span class="btn-icon">📖</span>
-            <span class="btn-text">历史</span>
-          </button>
-          <button id="themeToggle" class="action-btn" aria-label="切换主题">
-            <span id="themeIcon" class="btn-icon">🌙</span>
-          </button>
-        </div>
-      </div>
-    </header>
+    <!-- ============ 首页浮动操作按钮（右上角） ============ -->
+    <div class="float-actions" id="floatActions">
+      <button class="float-btn js-official-btn" aria-label="官方解析" title="粘贴官方平台链接解析播放" onclick="VideoApp.openOfficialModal()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+      </button>
+      <button class="float-btn js-history-btn" aria-label="历史" onclick="VideoApp.toggleHistoryPopover()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"></path><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"></path><path d="M12 7v5l4 2"></path></svg>
+      </button>
+      <button class="float-btn js-theme-btn" aria-label="切换主题">
+        <span class="js-theme-icon">🌙</span>
+      </button>
+    </div>
 
-    <main class="main container">
-      <nav class="breadcrumb" id="breadcrumb">
-        <span class="breadcrumb-item" data-page="home">首页</span>
-      </nav>
-
+    <main class="main">
+      <!-- ============ 首页：垂直居中 Hero ============ -->
       <div id="homePage" class="page active">
         <section class="home-hero">
           <h1 class="hero-title">想看的片，<span class="hero-hl">30秒直达播放源</span></h1>
           <p class="hero-sub">VIP视频聚合搜索引擎 · 电影 / 剧 / 动漫 / 综艺一网打尽 · 多源智能切换</p>
 
-          <div class="home-search-wrap">
-            <div class="home-search-inner">
-              <div class="source-switcher hero-source">
-                <button id="heroSourceBtn" class="hero-source-btn" aria-label="切换源">
-                  <span>📡</span>
-                  <span id="heroSourceLabel">全部源</span>
-                  <span class="hero-source-arrow">▾</span>
-                </button>
-                <div id="heroSourceDropdown" class="source-dropdown"></div>
-              </div>
-              <div class="home-search-box">
-                <span class="search-icon">🔍</span>
-                <input type="text" id="heroSearchInput" placeholder="搜索电影、电视剧、动漫、演员..." aria-label="搜索视频" />
-                <button id="heroSearchBtn" class="hero-search-btn" aria-label="搜索">搜索</button>
-              </div>
-            </div>
+          <div class="home-search-box">
+            <span class="search-icon">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
+            </span>
+            <input type="text" id="heroSearchInput" placeholder="搜索电影、电视剧、动漫、演员..." aria-label="搜索视频" autocomplete="off" spellcheck="false" />
+            <button type="button" class="home-search-clear" id="heroSearchClear" aria-label="清空搜索" tabindex="-1">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+            </button>
+            <button id="heroSearchBtn" class="hero-search-btn" aria-label="搜索">搜索</button>
           </div>
 
-          <div class="hot-label">🔥 今天大家都在搜</div>
+          <div class="hot-label">
+            <span class="hot-fire">🔥</span>
+            <span class="hot-text">热门搜索</span>
+          </div>
           <div class="hot-tags" id="hotTags"></div>
         </section>
-
-        <section class="home-decor-cats">
-          <div class="decor-cat"><div class="decor-emoji">🎬</div><div class="decor-name">电影</div></div>
-          <div class="decor-cat"><div class="decor-emoji">📺</div><div class="decor-name">电视剧</div></div>
-          <div class="decor-cat"><div class="decor-emoji">🌀</div><div class="decor-name">动漫</div></div>
-          <div class="decor-cat"><div class="decor-emoji">🎤</div><div class="decor-name">综艺</div></div>
-          <div class="decor-cat"><div class="decor-emoji">🎙️</div><div class="decor-name">纪录片</div></div>
-          <div class="decor-cat"><div class="decor-emoji">🎞️</div><div class="decor-name">短剧</div></div>
-          <div class="decor-cat"><div class="decor-emoji">🏛️</div><div class="decor-name">经典老片</div></div>
-          <div class="decor-cat"><div class="decor-emoji">🌏</div><div class="decor-name">海外影视</div></div>
-        </section>
-
-        <section class="home-stats">
-          <div class="stat-item"><div class="stat-num">100+</div><div class="stat-lbl">全网资源聚合</div></div>
-          <div class="stat-item"><div class="stat-num">&lt;200ms</div><div class="stat-lbl">毫秒级搜索响应</div></div>
-          <div class="stat-item"><div class="stat-num">4路+</div><div class="stat-lbl">多播放源备份</div></div>
-          <div class="stat-item"><div class="stat-num">0强制</div><div class="stat-lbl">无贴片无会员弹窗</div></div>
-        </section>
-
       </div>
 
+      <!-- ============ 搜索结果页：topbar + 无限滚动 ============ -->
       <div id="searchPage" class="page">
-        <div class="section">
-          <h2 class="section-title" id="listTitle">搜索结果</h2>
+        <div class="page-topbar">
+          <button id="searchBackBtn" class="topbar-back" aria-label="返回">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          </button>
+          <div class="topbar-title" id="searchTopbarTitle">搜索结果</div>
+          <div class="topbar-actions">
+            <button class="topbar-action js-history-btn" aria-label="历史" onclick="VideoApp.toggleHistoryPopover()">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"></path><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"></path><path d="M12 7v5l4 2"></path></svg>
+            </button>
+            <button class="topbar-action js-theme-btn" aria-label="切换主题">
+              <span class="js-theme-icon">🌙</span>
+            </button>
+          </div>
+        </div>
+        <div class="search-scroll-area">
           <div id="videoList" class="video-grid"></div>
-          <div class="pagination" id="paginationWrap">
-            <button id="prevPage" class="page-btn" disabled>上一页</button>
-            <span id="pageInfo" class="page-info">第 1 页</span>
-            <button id="nextPage" class="page-btn">下一页</button>
-            <input type="number" id="jumpPage" class="jump-input" min="1" placeholder="1" aria-label="跳转到页码" />
-            <button id="jumpBtn" class="page-btn">跳转</button>
+          <div class="load-more-sentinel" id="loadMoreSentinel">
+            <div class="load-more-spinner"></div>
+            <div class="load-more-text">向下滚动加载更多</div>
           </div>
         </div>
       </div>
 
-      <div id="detailPage" class="page">
-        <div id="detailContent" class="detail-content">
-          <div class="loading">加载中...</div>
-        </div>
-      </div>
-
+      <!-- ============ 播放页：topbar + 主体 ============ -->
       <div id="playerPage" class="page">
-        <div class="player-layout">
-          <div class="player-combined" id="playerCombined">
-            <div class="player-main">
-              <div class="player-wrapper">
+        <div class="player-layout-v3">
+          <!-- 顶部：返回 + 正在播放 + 右侧操作 -->
+          <div class="p-topbar">
+            <button id="pBackBtn" class="p-back-v3" aria-label="返回">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </button>
+            <div class="p-playing-label">
+              <span class="p-dot"></span>
+              正在播放：
+            </div>
+            <div class="p-now-title" id="playerTitle"></div>
+            <div class="p-topbar-actions">
+              <button class="p-topbar-action js-history-btn" aria-label="历史" onclick="VideoApp.toggleHistoryPopover()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"></path><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"></path><path d="M12 7v5l4 2"></path></svg>
+              </button>
+              <button class="p-topbar-action js-theme-btn" aria-label="切换主题">
+                <span class="js-theme-icon">🌙</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 主体：左播放器 + 右侧栏 -->
+          <div class="p-main">
+            <div class="p-stage">
+              <div class="p-player">
                 <div id="dplayer"></div>
-              </div>
-              <div class="player-header">
-                <h2 id="playerTitle" class="player-title"></h2>
-                <div class="player-controls">
-                  <button id="wideScreenBtn" class="ep-btn" title="宽屏模式（隐藏剧集）">⛶ 宽屏</button>
+                <div id="playerLoading" class="p-loading hidden">
+                  <div class="pl-spinner"></div>
+                  <div class="pl-title">正在加载播放源...</div>
+                  <div class="pl-sub">若长时间无响应，请尝试切换线路</div>
                 </div>
               </div>
             </div>
-            <div class="player-sidebar" id="playerSidebar">
-              <div class="sidebar-section">
-                <div class="sidebar-tabs" id="playerSourceTabs"></div>
+
+            <aside class="p-sidebar">
+              <div class="p-tabs">
+                <div class="p-tab active" data-tab="episodes">选集 <span id="tabCountEp" class="p-tab-count"></span></div>
+                <div class="p-tab" data-tab="info">简介</div>
               </div>
-              <div class="sidebar-section">
-                <h3 class="sidebar-title collapsible" id="episodeCollapse" title="点击折叠/展开">
-                  <span>剧集列表 <span id="episodeCountLabel" class="sidebar-count" style="color:var(--text-muted); font-size:12px; font-weight:400;"></span></span>
-                  <span class="arrow">▾</span>
-                </h3>
-                <div class="episode-list-wrapper">
-                  <div class="episode-list" id="playerEpisodeList"></div>
+
+              <div class="p-pane active" data-pane="episodes">
+                <div class="p-section-header">
+                  <span>选集</span>
+                  <button id="epToggleBtn" class="p-link">展开选集 ›</button>
+                </div>
+                <div class="p-current-ep" id="pCurrentEp">当前：第1集</div>
+                <div class="p-ep-grid" id="playerEpisodeList"></div>
+
+                <div class="p-section-header" style="margin-top:18px;">
+                  <span>线路选择</span>
+                  <span class="p-section-hint" id="pSourceHint"></span>
+                </div>
+                <div class="p-source-list" id="playerSourceTabs"></div>
+              </div>
+
+              <div class="p-pane" data-pane="info">
+                <div id="detailInlineContent">
+                  <div class="p-loading-inline">加载影片信息...</div>
                 </div>
               </div>
-            </div>
+            </aside>
           </div>
         </div>
       </div>
 
-      <div id="historyPage" class="page">
-        <h2 class="section-title">观看历史</h2>
-        <div id="historyList"></div>
+      <!-- ============ 历史浮层（桌面小框 / 移动全屏） ============ -->
+      <div class="history-popover" id="historyPopover" aria-hidden="true">
+        <div class="history-popover-inner">
+          <div class="history-popover-header">
+            <span class="history-popover-title">观看历史</span>
+            <div class="history-popover-actions">
+              <button id="clearHistoryBtn" class="history-popover-clear" onclick="VideoApp.clearHistory()">清空</button>
+              <button class="history-popover-close" aria-label="关闭" onclick="VideoApp.closeHistoryPopover()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              </button>
+            </div>
+          </div>
+          <div class="history-popover-body" id="historyList"></div>
+        </div>
+        <div class="history-popover-overlay" onclick="VideoApp.closeHistoryPopover()"></div>
+      </div>
+
+      <!-- ============ 官方解析浮窗 ============ -->
+      <div class="official-modal" id="officialModal" aria-hidden="true">
+        <div class="official-modal-inner" role="dialog" aria-modal="true" aria-labelledby="officialModalTitle">
+          <div class="om-header">
+            <div class="om-header-title">
+              <span class="om-header-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+              </span>
+              <span id="officialModalTitle">官方解析</span>
+            </div>
+            <button class="om-close" aria-label="关闭" onclick="VideoApp.closeOfficialModal()">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+          </div>
+
+          <div class="om-body">
+            <div class="om-desc">
+              <span class="om-desc-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+              </span>
+              <div class="om-desc-text">
+                <p class="om-desc-title">这是什么？</p>
+                <p class="om-desc-sub">粘贴各大视频平台的官方链接，直接调用官方播放器解析播放，画质更稳、播放更流畅。</p>
+              </div>
+            </div>
+
+            <div class="om-platforms">
+              <span class="om-pl-label">支持平台</span>
+              <div class="om-pl-tags">
+                <span class="om-pl-tag">腾讯视频</span>
+                <span class="om-pl-tag">爱奇艺</span>
+                <span class="om-pl-tag">优酷</span>
+                <span class="om-pl-tag">芒果TV</span>
+                <span class="om-pl-tag">B站番剧</span>
+                <span class="om-pl-tag">搜狐</span>
+                <span class="om-pl-tag">乐视</span>
+                <span class="om-pl-tag">1905电影</span>
+                <span class="om-pl-tag">PPTV</span>
+              </div>
+            </div>
+
+            <div class="om-input-wrap">
+              <input id="officialUrlInput" type="url" placeholder="粘贴官方链接，如：https://v.qq.com/x/cover/xxx/xxx.html" autocomplete="off" spellcheck="false" />
+            </div>
+            <div class="om-error" id="officialUrlError" aria-live="polite"></div>
+
+            <div class="om-actions">
+              <button id="officialParseSubmit" class="om-submit" onclick="VideoApp.submitOfficialParse()">开始解析</button>
+            </div>
+          </div>
+        </div>
+        <div class="official-modal-overlay" onclick="VideoApp.closeOfficialModal()"></div>
       </div>
     </main>
-
-    <footer class="footer">
-      <div class="container">
-        <p>© 2026 VIP视频解析 - 仅供学习交流使用</p>
-      </div>
-    </footer>
   </div>
 
-  <script src="js/services/api.js"></script>
+  <script src="js/services/api.js?v=20260817v32play"></script>
   <script src="js/services/storage.js"></script>
-  <script src="js/components/videoList.js"></script>
-  <script src="js/components/videoDetail.js"></script>
-  <script src="js/components/player.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/components/videoList.js?v=20260817v32play"></script>
+  <script src="js/components/videoDetail.js?v=20260817v32play"></script>
+  <script src="https://cdn.jsdelivr.net/npm/artplayer@5/dist/artplayer.min.js"></script>
   <script src="js/hls.min.js"></script>
-  <script src="js/DPlayer.min.js"></script>
+  <script src="js/components/player.js?v=20260817v32play"></script>
+  <script src="js/app.js?v=20260817v35home"></script>
 </body>
 </html>

@@ -10,7 +10,7 @@
 - 🔀 **聚合搜索** — 并行请求多个数据源，自动去重合并
 - 💾 **多级缓存** — Cloudflare Cache API（Pages 版）/ 内存 Map（Express 版），默认 5 分钟 TTL
 - 🛡️ **熔断器** — 连续失败自动熔断 30 秒，避免拖慢响应
-- 🎨 **响应式 UI** — 数据源切换、来源标签、详情页多播放源切换、深浅色主题、宽屏模式、观看历史
+- 🎨 **响应式 UI** — 聚合来源标签、详情页多播放源切换、深浅色主题、宽屏模式、观看历史
 - ⚙️ **站点配置** — 站点名称、热搜词、默认宽屏、首页 Stats 条等一键自定义
 - 🚀 **Serverless 部署** — 一键托管到 Cloudflare Pages，无需自购服务器与维护 Node 进程
 
@@ -107,7 +107,6 @@ $env:HTTPS_PROXY="http://127.0.0.1:18080"; npm start
 │   ├── sources.js / sources.mjs
 │   └── site.config.js / site.config.mjs
 ├── services/videoService.js    # Express 版核心服务
-├── src/videoService.mjs        # (与 functions/_shared/videoService.mjs 内容一致，便于外部引用)
 ├── server.js                   # Express 服务器
 ├── package.json
 └── .gitignore

@@ -4,6 +4,7 @@ node_modules/
 # Wrangler / Cloudflare local artifacts
 .wrangler/
 .wrangler-logs/
+.wrangler-config/
 
 # Logs
 logs
@@ -15,3 +16,6 @@ npm-debug.log*
 .idea/
 .vscode/
 Thumbs.db
+
+# WorkBuddy workspace data (local memory, do not commit)
+.workbuddy/

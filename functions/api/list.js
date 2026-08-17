@@ -35,20 +35,19 @@ async function handle(context) {
   const page = parseInt(params.pg) || 1;
   const keyword = params.wd || '';
   const ac = params.ac || '';
-  const source = params.source || '';
 
   try {
     if (ac === 'typelist') {
-      const data = await getCategoryList(source);
+      const data = await getCategoryList();
       return json(data);
     }
 
     if (keyword) {
-      const data = await searchVideos(keyword, page, source);
+      const data = await searchVideos(keyword, page);
       return json(data);
     }
 
-    const data = await getVideoList(page, source);
+    const data = await getVideoList(page);
     return json(data);
   } catch (err) {
     console.error('API /list error:', err.message);
