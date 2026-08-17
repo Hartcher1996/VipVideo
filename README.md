@@ -6,8 +6,10 @@
 
 ## 功能特性
 
-- 🎛️ **多数据源支持** — 配置化管理，轻松添加/删除数据源
+- 🎛️ **多数据源支持** — 配置化管理，轻松添加/删除数据源（默认 5 源聚合）
 - 🔀 **聚合搜索** — 并行请求多个数据源，自动去重合并
+- 🔗 **云播直嵌** — U酷/金鹰等资源站自带播放器的线路直接 iframe 嵌入，不走解析代理
+- 🪟 **官方解析浮窗** — 首页顶部一键打开官方解析器，支持粘贴解析链接
 - 💾 **多级缓存** — Cloudflare Cache API（Pages 版）/ 内存 Map（Express 版），默认 5 分钟 TTL
 - 🛡️ **熔断器** — 连续失败自动熔断 30 秒，避免拖慢响应
 - 🎨 **响应式 UI** — 聚合来源标签、详情页多播放源切换、深浅色主题、宽屏模式、观看历史
@@ -19,8 +21,10 @@
 | 数据源 | API 地址 | 状态 |
 |--------|----------|------|
 | 最大资源 | `api.zuidapi.com` | ✅ |
-| 非凡资源 | `api.ffzyapi.com` | ✅ |
 | 量子资源 | `cj.lziapi.com` | ✅ |
+| U酷资源 | `api.ukuapi88.com` | ✅ |
+| 暴风资源 | `bfzyapi.com` | ✅ |
+| 金鹰资源 | `jinyingzy.com` | ✅ |
 
 ## 快速开始
 
@@ -149,8 +153,10 @@ GET /api/sources
   "code": 1,
   "sources": [
     { "id": "zuidapi", "name": "最大资源", "priority": 1 },
-    { "id": "ffzyapi", "name": "非凡资源", "priority": 2 },
-    { "id": "lziapi", "name": "量子资源", "priority": 3 }
+    { "id": "lziapi", "name": "量子资源", "priority": 2 },
+    { "id": "ukuapi", "name": "U酷资源", "priority": 3 },
+    { "id": "bfzyapi", "name": "暴风资源", "priority": 4 },
+    { "id": "jinyingzy", "name": "金鹰资源", "priority": 5 }
   ]
 }
 ```
