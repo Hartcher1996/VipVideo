@@ -59,9 +59,6 @@
     window.scrollTo(0, 0);
   }
 
-  // 面包屑已移除（no-op，保留签名避免外部调用报错）
-  function updateBreadcrumb(items) {}
-
   function showToast(msg) {
     let toast = document.getElementById('toast');
     if (!toast) {
@@ -720,7 +717,6 @@
 
   window.VideoApp = {
     showToast,
-    updateBreadcrumb,
     goBackFromPlayer,
     // 官方解析浮窗（供内联 onclick 调用）
     openOfficialModal,

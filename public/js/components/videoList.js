@@ -76,6 +76,10 @@
             ${video.type_name ? `<span class="type">${esc(video.type_name)}</span>` : ''}
             ${video.vod_year ? `<span class="year">${esc(video.vod_year)}</span>` : ''}
           </div>
+          <div class="card-extra">
+            ${sourceCount > 1 ? `<span class="ex-source">${sourceCount}源</span>` : ''}
+            ${video.vod_remarks ? `<span class="ex-remarks">${esc(video.vod_remarks)}</span>` : ''}
+          </div>
         </div>
       </div>
     `;
@@ -196,25 +200,12 @@
     isLoadingMore = loading;
   }
 
-  // 已废弃：首页分区函数（保留空实现避免报错）
-  function renderSectionSkeleton(container, count) {}
-  function renderHomeSection(section, onVideoClick, onMoreClick) { return ''; }
-  function bindHomeSectionClick(container, onVideoClick, onMoreClick) {}
-
-  // 已废弃：分页（保留空实现避免报错）
-  function updatePagination(page, totalPage, onPrev, onNext, onJump) {}
-
   window.VideoListComponent = {
     renderSkeletonCards,
     renderVideoList,
     appendVideoList,
-    aggregateUnique,
     initInfiniteScroll,
     setSentinelState,
-    setLoadingMore,
-    renderSectionSkeleton,
-    renderHomeSection,
-    bindHomeSectionClick,
-    updatePagination
+    setLoadingMore
   };
 })();

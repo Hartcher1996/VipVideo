@@ -1,8 +1,6 @@
 (function() {
   'use strict';
 
-  const PLACEHOLDER_COVER = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="420"><rect fill="%232a2a4a" width="300" height="420"/><text x="150" y="210" fill="%23888" font-size="18" text-anchor="middle" font-family="Arial">暂无封面</text></svg>';
-
   let abortController = null;
   const responseCache = new Map();
   const CACHE_TTL = 60 * 1000;
@@ -86,10 +84,6 @@
     if (keyword) params.wd = keyword;
     if (typeId) params.tid = typeId;
     return fetchAPI('list', params, options || {});
-  }
-
-  async function searchVideos(keyword, page) {
-    return fetchAPI('search', { wd: keyword, pg: page });
   }
 
   async function loadVideoDetail(id) {
@@ -195,9 +189,7 @@
   }
 
   window.VideoAPI = {
-    PLACEHOLDER_COVER,
     loadVideoList,
-    searchVideos,
     loadVideoDetail,
     parsePlaySources,
     escapeHtml: esc
