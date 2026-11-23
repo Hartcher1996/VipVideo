@@ -33,5 +33,26 @@ module.exports = [
     baseUrl: 'https://jinyingzy.com/api.php/provide/vod/',
     enabled: true,
     priority: 5
+  },
+  {
+    id: 'wujinapi',
+    name: '无尽资源',
+    baseUrl: 'https://api.wujinapi.com/api.php/provide/vod/',
+    enabled: true,
+    priority: 6
+  },
+  {
+    id: 'hongniuzy',
+    name: '红牛资源',
+    baseUrl: 'https://www.hongniuzy2.com/api.php/provide/vod/',
+    enabled: true,
+    priority: 7
+  },
+  {
+    id: 'hhzyapi',
+    name: '豪华资源',
+    baseUrl: 'https://hhzyapi.com/api.php/provide/vod/',
+    enabled: true,
+    priority: 8
   }
 ];
