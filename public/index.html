@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>VIP视频解析</title>
-  <link rel="stylesheet" href="css/style.css?v=20260818v2mobile">
+  <link rel="stylesheet" href="css/style.css?v=20261123side">
 </head>
 <body data-page="home" data-theme="dark">
   <div id="app">
@@ -100,6 +100,9 @@
             <div class="p-stage">
               <div class="p-player">
                 <div id="dplayer"></div>
+                <button id="pSideToggle" class="p-side-toggle" type="button" aria-label="隐藏右侧栏" title="隐藏右侧栏">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </button>
                 <div id="playerLoading" class="p-loading hidden">
                   <div class="pl-spinner"></div>
                   <div class="pl-title">正在加载播放源...</div>
@@ -218,7 +221,7 @@
   <script src="js/components/videoDetail.js?v=20261123fix"></script>
   <script src="https://cdn.jsdelivr.net/npm/artplayer@5/dist/artplayer.min.js"></script>
   <script src="js/hls.min.js"></script>
-  <script src="js/components/player.js?v=20261123fix"></script>
+  <script src="js/components/player.js?v=20261123side"></script>
   <script src="js/app.js?v=20261123fix"></script>
 </body>
 </html>

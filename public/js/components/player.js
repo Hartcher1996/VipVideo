@@ -106,6 +106,41 @@
     }
   }
 
+  // 右侧栏收起按钮：鼠标在播放区移动时出现，静止一段时间或移出后隐藏
+  function initSideToggle() {
+    const player = document.querySelector('.p-player');
+    const main = document.querySelector('.p-main');
+    const btn = document.getElementById('pSideToggle');
+    if (!player || !main || !btn) return;
+
+    let hideTimer = null;
+
+    function hideToggle() {
+      player.classList.remove('ui-active');
+      if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+    }
+
+    function showToggle() {
+      player.classList.add('ui-active');
+      if (hideTimer) clearTimeout(hideTimer);
+      hideTimer = setTimeout(hideToggle, 2400);
+    }
+
+    player.addEventListener('mouseenter', showToggle);
+    player.addEventListener('mousemove', showToggle);
+    player.addEventListener('mouseleave', hideToggle);
+
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const collapsed = main.classList.toggle('side-collapsed');
+      const label = collapsed ? '显示右侧栏' : '隐藏右侧栏';
+      btn.setAttribute('aria-label', label);
+      btn.setAttribute('title', label);
+      showToggle();
+    });
+  }
+
   function renderSidebar() {
     const v = currentVideo;
     if (!v) return;
@@ -466,6 +501,7 @@
   function init() {
     initTabs();
     initBackButton();
+    initSideToggle();
   }
 
   if (document.readyState === 'loading') {

@@ -2360,3 +2360,40 @@ body[data-page="home"] .home-hero {max-width: 720px;
   box-shadow: 0 2px 8px rgba(245, 166, 35, .35);}
 .hot-tag:hover .rank {transform: scale(1.12);}
 
+/* ============ 播放页：右侧栏收起/展开按钮 ============ */
+/* 平时不可见，鼠标在播放区移动时出现，静止或移出后自动隐藏（类似播放器控制条） */
+.p-side-toggle {position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  width: 34px;
+  height: 58px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  background: rgba(8, 10, 16, 0.55);
+  color: rgba(255, 255, 255, 0.92);
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 20;}
+.p-side-toggle svg {transition: transform 0.25s ease;}
+.p-player.ui-active .p-side-toggle,
+.p-side-toggle:focus-visible {opacity: 1;
+  pointer-events: auto;}
+.p-side-toggle:hover {background: rgba(76, 158, 255, 0.32);
+  border-color: rgba(76, 158, 255, 0.55);}
+/* 收起态：播放器占满整行，箭头翻转指向左侧 */
+.p-main.side-collapsed {grid-template-columns: 1fr;}
+.p-main.side-collapsed .p-sidebar {display: none;}
+.p-main.side-collapsed .p-side-toggle svg {transform: rotate(180deg);}
+/* 影院模式与移动端不使用（无鼠标悬停语义 / 侧栏在播放器下方） */
+body[data-page="player"].theater .p-side-toggle {display: none;}
+@media (max-width: 768px) {.p-side-toggle {display: none;}}
+
