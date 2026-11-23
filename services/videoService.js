@@ -273,6 +273,32 @@ async function getVideoList(page = 1) {
   return { code: 1, list: [], pagecount: 1, page: page, total: 0 };
 }
 
+// ============ 工具函数：关键词相关性 ============
+// 部分资源站会忽略 wd 直接返回最新列表，需要在聚合时过滤掉与关键词无关的条目
+function normalizeForMatch(str) {
+  return String(str || '').toLowerCase().replace(/[\s\p{P}\p{S}]/gu, '');
+}
+
+function matchesKeyword(item, keyword) {
+  const kw = normalizeForMatch(keyword);
+  if (!kw) return true;
+  const haystack = normalizeForMatch(
+    [item.vod_name, item.vod_sub, item.vod_actor, item.vod_director, item.vod_blurb].join(' ')
+  );
+  return haystack.includes(kw);
+}
+
+// 排序分数：片名完全匹配 > 前缀匹配 > 包含 > 仅其他字段匹配
+function relevanceScore(item, keyword) {
+  const kw = normalizeForMatch(keyword);
+  const name = normalizeForMatch(item.vod_name);
+  if (!kw) return 0;
+  if (name === kw) return 0;
+  if (name.startsWith(kw)) return 1;
+  if (name.includes(kw)) return 2;
+  return 3;
+}
+
 // 聚合搜索：多源并行 → 按 vod_name 归并 → 同片多源收集到 _playSources
 // 项目无单源模式：搜索永远聚合所有启用源
 async function searchVideos(keyword, page = 1) {
@@ -293,11 +319,15 @@ async function searchVideos(keyword, page = 1) {
 
   for (const data of results) {
     if (!data || data.code !== 1 || !Array.isArray(data.list)) continue;
-    if (data.pagecount > maxPageCount) maxPageCount = data.pagecount;
+    const sourceItems = data.list.filter((item) => item.vod_name && matchesKeyword(item, keyword));
+    // 只有整页结果都与关键词相关时才采信该源的 pagecount，
+    // 避免忽略 wd 的源用「全站列表页数」污染分页
+    if (sourceItems.length > 0 && sourceItems.length === data.list.length && data.pagecount > maxPageCount) {
+      maxPageCount = data.pagecount;
+    }
 
-    for (const item of data.list) {
+    for (const item of sourceItems) {
       const key = item.vod_name;
-      if (!key) continue;
 
       // 解析这个源的播放线路
       const playSources = parsePlaySources(
@@ -338,6 +368,9 @@ async function searchVideos(keyword, page = 1) {
     mergedList.push(item);
   }
 
+  // 按相关度排序：片名完全匹配的排最前
+  mergedList.sort((a, b) => relevanceScore(a, keyword) - relevanceScore(b, keyword));
+
   const result = {
     code: 1,
     list: mergedList,
@@ -352,8 +385,9 @@ async function searchVideos(keyword, page = 1) {
 
 // 详情也做聚合：先用 vod_id 拿主条目，
 // 再并行搜索其他源的同名影片，合并所有播放线路到 _playSources
-async function getVideoDetail(id) {
-  const cacheKey = `detail:${id}`;
+// sourceId：卡片所属源。不同源的 vod_id 空间会冲突，必须优先用同源查询
+async function getVideoDetail(id, sourceId = '', expectedName = '') {
+  const cacheKey = `detail:${sourceId || 'any'}:${id}`;
   const cached = getCache(cacheKey);
   if (cached) return cached;
 
@@ -362,22 +396,43 @@ async function getVideoDetail(id) {
   let mainItem = null;
   const allPlaySources = [];
 
-  // 先从任一源拿到主条目
-  for (const source of sources) {
-    const data = await fetchFromSource(source, params);
-    if (data && data.code === 1 && data.list && data.list.length > 0) {
-      mainItem = { ...data.list[0] };
-
-      // 解析主源的播放线路
-      const playSources = parsePlaySources(
-        mainItem.vod_play_from,
-        mainItem.vod_play_url,
-        mainItem._source,
-        mainItem._sourceName
-      );
-      allPlaySources.push(...playSources);
-      break;
+  // 1) 指定源优先：卡片的 vod_id 本来就来自该源，直接采用
+  if (sourceId) {
+    for (const source of sources.filter(s => s.id === sourceId)) {
+      const data = await fetchFromSource(source, params);
+      if (data && data.code === 1 && data.list && data.list.length > 0) {
+        mainItem = { ...data.list[0] };
+        break;
+      }
     }
+  }
+
+  // 2) 指定源不可用（或未指定）时回落其他源，但必须片名一致，
+  //    避免不同源的同号 id 串成另一部片
+  if (!mainItem) {
+    const expected = normalizeForMatch(expectedName);
+    for (const source of sources.filter(s => s.id !== sourceId)) {
+      const data = await fetchFromSource(source, params);
+      if (!data || data.code !== 1 || !Array.isArray(data.list)) continue;
+      const hit = expected
+        ? data.list.find(it => normalizeForMatch(it.vod_name) === expected)
+        : data.list[0];
+      if (hit) {
+        mainItem = { ...hit };
+        break;
+      }
+    }
+  }
+
+  if (mainItem) {
+    // 解析主源的播放线路
+    const playSources = parsePlaySources(
+      mainItem.vod_play_from,
+      mainItem.vod_play_url,
+      mainItem._source,
+      mainItem._sourceName
+    );
+    allPlaySources.push(...playSources);
   }
 
   if (!mainItem) {

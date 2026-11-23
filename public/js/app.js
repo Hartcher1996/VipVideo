@@ -105,7 +105,7 @@
         totalPage = data.pagecount || 1;
         currentPage = page;
 
-        VideoListComponent.renderVideoList(data.list, (id) => loadVideoDetail(id));
+        VideoListComponent.renderVideoList(data.list, (id, source, name) => loadVideoDetail(id, source, name));
         VideoStorage.saveListState({ keyword, page, typeId });
 
         // 初始化无限滚动
@@ -177,7 +177,7 @@
       const data = await VideoAPI.loadVideoList(nextPage, currentKeyword, currentTypeId, { abortable: false });
 
       if (data.code === 1 && data.list && data.list.length > 0) {
-        VideoListComponent.appendVideoList(data.list, (id) => loadVideoDetail(id));
+        VideoListComponent.appendVideoList(data.list, (id, source, name) => loadVideoDetail(id, source, name));
         currentPage = nextPage;
         VideoStorage.saveListState({ keyword: currentKeyword, page: currentPage, typeId: currentTypeId });
 
@@ -279,11 +279,11 @@
   }
 
   // ============ 进入播放页 ============
-  async function loadVideoDetail(id) {
-    return loadVideoAndGoPlayer(id);
+  async function loadVideoDetail(id, source, name) {
+    return loadVideoAndGoPlayer(id, undefined, undefined, source, name);
   }
 
-  async function loadVideoAndGoPlayer(id, preferredSourceIdx, preferredEpisodeIdx) {
+  async function loadVideoAndGoPlayer(id, preferredSourceIdx, preferredEpisodeIdx, sourceId, expectedName) {
     saveScrollPosition();
     setTheaterMode(false);
 
@@ -293,7 +293,7 @@
     window.scrollTo(0, 0);
 
     try {
-      const data = await VideoAPI.loadVideoDetail(id);
+      const data = await VideoAPI.loadVideoDetail(id, sourceId, expectedName);
 
       if (data.code === 1 && data.list && data.list.length > 0) {
         currentVideo = data.list[0];
@@ -340,7 +340,7 @@
           `;
           const retryBtn = document.getElementById('detailRetryBtn');
           if (retryBtn) {
-            retryBtn.addEventListener('click', () => loadVideoAndGoPlayer(id, preferredSourceIdx, preferredEpisodeIdx));
+            retryBtn.addEventListener('click', () => loadVideoAndGoPlayer(id, preferredSourceIdx, preferredEpisodeIdx, sourceId, expectedName));
           }
         }
         showToast('加载视频信息失败');
@@ -396,8 +396,10 @@
     const hist = VideoStorage.getHistory().find(h => (h.vod_uniq_id || h.vod_id) === uniqId);
     const srcIdx = hist && typeof hist.lastSourceIdx === 'number' ? hist.lastSourceIdx : 0;
     const epIdx = hist && typeof hist.lastEpisodeIdx === 'number' ? hist.lastEpisodeIdx : 0;
+    const vodSource = hist && hist.vod_source ? hist.vod_source : '';
+    const vodName = hist && hist.vod_name ? hist.vod_name : '';
     closeHistoryPopover();
-    loadVideoAndGoPlayer(vodId, srcIdx, epIdx);
+    loadVideoAndGoPlayer(vodId, srcIdx, epIdx, vodSource, vodName);
     return false;
   }
 

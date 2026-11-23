@@ -404,8 +404,12 @@
     } else if (urlType === 'shareDirect') {
       // 站点自带播放器（如 U酷云播），直接嵌入原始地址，不走解析代理
       playDirectIframe(ep.url);
-    } else if (urlType === 'share' || urlType === 'official') {
+    } else if (urlType === 'official') {
       playWithIframe(ep.url);
+    } else if (urlType === 'share') {
+      // 云播 share 页面自带播放器，直接嵌入；
+      // /api/parse 只放行官方平台 URL，走代理会被 403
+      playDirectIframe(ep.url);
     } else {
       playDirectIframe(ep.url);
     }

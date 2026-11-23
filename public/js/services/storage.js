@@ -40,11 +40,13 @@
     let lastSourceIdx = 0;
     let lastEpisodeIdx = 0;
     let lastEpisodeName = '';
+    let vodSource = video._source || '';
     if (existingIndex !== -1) {
       const prev = history[existingIndex];
       lastSourceIdx = prev.lastSourceIdx || 0;
       lastEpisodeIdx = prev.lastEpisodeIdx || 0;
       lastEpisodeName = prev.lastEpisodeName || '';
+      if (!vodSource) vodSource = prev.vod_source || '';
     }
     if (opts && typeof opts === 'object') {
       if (typeof opts.lastSourceIdx === 'number') lastSourceIdx = opts.lastSourceIdx;
@@ -59,6 +61,7 @@
     history.unshift({
       vod_id: video.vod_id,
       vod_uniq_id: video.vod_uniq_id || '',
+      vod_source: vodSource,
       vod_name: video.vod_name,
       vod_pic: video.vod_pic,
       type_name: video.type_name,

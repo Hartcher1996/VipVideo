@@ -170,13 +170,15 @@ app.post('/api/search', handleSearch);
 async function handleDetail(req, res) {
   const params = getParams(req);
   const id = params.ids;
+  const source = params.source || '';
+  const name = params.name || '';
 
   if (!id) {
     return res.json({ code: 0, msg: '缺少视频ID', list: [] });
   }
 
   try {
-    const data = await videoService.getVideoDetail(id);
+    const data = await videoService.getVideoDetail(id, source, name);
     res.json(data);
   } catch (err) {
     console.error('API /detail error:', err.message);

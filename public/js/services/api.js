@@ -86,8 +86,12 @@
     return fetchAPI('list', params, options || {});
   }
 
-  async function loadVideoDetail(id) {
-    return fetchAPI('detail', { ids: id }, { abortable: false });
+  async function loadVideoDetail(id, source, name) {
+    const params = { ids: id };
+    // 带上卡片所属源与片名：不同源的 vod_id 会重号，避免详情取到别的片
+    if (source) params.source = source;
+    if (name) params.name = name;
+    return fetchAPI('detail', params, { abortable: false });
   }
 
   function parsePlaySources(video) {

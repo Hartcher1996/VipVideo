@@ -60,7 +60,7 @@
       : '';
 
     return `
-      <div class="video-card" data-id="${esc(video.vod_id)}" data-uniq="${esc(video.vod_uniq_id || '')}" role="button" tabindex="0">
+      <div class="video-card" data-id="${esc(video.vod_id)}" data-source="${esc(video._source || '')}" data-name="${esc(video.vod_name)}" data-uniq="${esc(video.vod_uniq_id || '')}" role="button" tabindex="0">
         <div class="cover-wrapper">
           <img class="cover" loading="lazy" src="${esc(video.vod_pic) || PLACEHOLDER_COVER}" alt="${esc(video.vod_name)}" onerror="this.src='${PLACEHOLDER_COVER}'">
           ${sourceBadge}
@@ -141,13 +141,13 @@
     videoList.parentNode.replaceChild(newList, videoList);
     newList.addEventListener('click', (e) => {
       const card = e.target.closest('.video-card');
-      if (card) onVideoClick(card.dataset.id);
+      if (card) onVideoClick(card.dataset.id, card.dataset.source || '', card.dataset.name || '');
     });
     newList.addEventListener('keydown', (e) => {
       const card = e.target.closest('.video-card');
       if (card && (e.key === 'Enter' || e.key === ' ')) {
         e.preventDefault();
-        onVideoClick(card.dataset.id);
+        onVideoClick(card.dataset.id, card.dataset.source || '', card.dataset.name || '');
       }
     });
   }
